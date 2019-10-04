@@ -69,6 +69,10 @@ class AccessoriesController extends Controller
 
         $accessories->orderBy($sort, $order);
 
+        if ($request->status === 'Deleted') {
+            $accessories->onlyTrashed();
+        }
+        
         $total = $accessories->count();
         $accessories = $accessories->skip($offset)->take($limit)->get();
         return (new AccessoriesTransformer)->transformAccessories($accessories, $total);

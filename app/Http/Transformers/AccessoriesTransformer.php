@@ -49,7 +49,18 @@ class AccessoriesTransformer
             'checkin' =>  false,
             'update' => Gate::allows('update', Accessory::class) ? true : false,
             'delete' => Gate::allows('delete', Accessory::class) ? true : false,
+            'restore' => false,
         ];
+
+        if ($accessory->deleted_at) {
+            $permissions_array['available_actions'] = [
+                'checkout' => false,
+                'checkin' =>  false,
+                'update' => false,
+                'delete' => false,
+                'restore' => Gate::allows('create', Accessory::class) ? true : false,
+            ];
+        }
 
         $permissions_array['user_can_checkout'] = false;
 
