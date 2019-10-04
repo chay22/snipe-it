@@ -53,9 +53,6 @@ class CustomFieldsetsController extends Controller
                 }
             }
 
-            return view("custom_fields.fieldsets.view")->with("custom_fieldset", $cfset)->with("maxid", $maxid+1)->with("custom_fields_list", $custom_fields_list);
-        }
-
             return view("custom_fields.fieldsets.view")
                 ->with("custom_fieldset", $cfset)
                 ->with("maxid", $maxid+1)
