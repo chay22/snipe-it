@@ -2,7 +2,7 @@
 
 return array(
     'bulk_delete'       => 'Confirm Bulk Delete Licenses',
-    'bulk_delete_help'  => 'Review the licenses for bulk deletion below. Once deleted, it will delete all associated license seats. Caution: this action can not be restored.',
+    'bulk_delete_help'  => 'Review the licenses for bulk deletion below. Once deleted, it will delete all associated license seats. This action can be restored.',
     'bulk_delete_warn'  => 'You are about to delete :license_count licenses.',
     'bulk_update'       => 'Bulk Update Licenses',
     'bulk_update_help'  => 'This form allows you to update multiple licenses at once. Only fill in the fields you need to change. Any fields left blank will remain unchanged. ',

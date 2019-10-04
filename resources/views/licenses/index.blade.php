@@ -56,7 +56,7 @@
                   data-toolbar="#toolbar"
                   id="licensesTable"
                   class="table table-striped snipe-table"
-                  data-url="{{ route('api.licenses.index') }}"
+                  data-url="{{ route('api.licenses.index', ['status' => request('status')]) }}"
                   data-export-options='{
                 "fileName": "export-licenses-{{ date('Y-m-d') }}",
                 "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]

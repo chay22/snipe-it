@@ -50,7 +50,19 @@ class LicensesTransformer
             'clone' => Gate::allows('create', License::class) ? true : false,
             'update' => Gate::allows('update', License::class) ? true : false,
             'delete' => Gate::allows('delete', License::class) ? true : false,
+            'restore' => false,
         ];
+
+        if ($license->deleted_at) {
+            $permissions_array['available_actions'] = [
+                'checkout' => false,
+                'checkin' =>  false,
+                'clone' => false,
+                'update' => false,
+                'delete' => false,
+                'restore' => Gate::allows('create', License::class) ? true : false,
+            ];
+        }
 
         $array += $permissions_array;
 

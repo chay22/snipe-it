@@ -50,25 +50,7 @@
               </div>
           </div>
 
-          <!-- Reassignable -->
-          <div class="form-group {{ $errors->has('reassignable') ? ' has-error' : '' }}">
-              <label for="reassignable" class="col-md-3 control-label">{{ trans('admin/licenses/form.reassignable') }}</label>
-              <div class="col-md-7 input-group">
-                  <label class="radio-inline">
-                      {{ Form::radio('reassignable', '1', old('reassignable', $item->reassignable), array('class' => 'minimal')) }}
-                      {{ trans('general.yes') }}
-                  </label>
-
-                  <label class="radio-inline">
-                      {{ Form::radio('reassignable', '0', old('reassignable', $item->reassignable), array('class' => 'minimal')) }}
-                      {{ trans('general.no') }}
-                  </label>
-              </div>
-          </div>
-
-
           @include ('partials.forms.edit.supplier-select', ['translated_name' => trans('general.supplier'), 'fieldname' => 'supplier_id'])
-          @include ('partials.forms.edit.order_number')
           @include ('partials.forms.edit.purchase_cost')
           @include ('partials.forms.edit.purchase_date')
 
@@ -108,27 +90,6 @@
                   {!! $errors->first('purchase_order', '<span class="alert-msg"><i class="fa fa-times"></i> :message</span>') !!}
               </div>
           </div>
-
-          {{-- @include ('partials.forms.edit.depreciation') --}}
-
-          <!-- Maintained -->
-          <div class="form-group {{ $errors->has('maintained') ? ' has-error' : '' }}">
-              <label for="maintained" class="col-md-3 control-label">{{ trans('admin/licenses/form.maintained') }}</label>
-              <div class="checkbox col-md-7">
-                  <label class="radio-inline">
-                      {{ Form::radio('maintained', '1', old('maintained', $item->maintained),array('class' => 'minimal')) }}
-                      {{ trans('general.yes') }}
-                  </label>
-                  <label class="radio-inline">
-                      {{ Form::radio('maintained', '0', old('maintained', $item->maintained),array('class' => 'minimal')) }}
-                      {{ trans('general.no') }}
-                  </label>
-
-              </div>
-          </div>
-
-
-
 
           @foreach ($licenses as $key => $value)
             <input type="hidden" name="ids[{{ $key }}]" value="1">

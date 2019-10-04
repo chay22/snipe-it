@@ -32,6 +32,11 @@ return array(
         'success' => 'License updated successfully.'
     ),
 
+    'restore' => array(
+        'error'         => 'License was not restored, please try again',
+        'success'       => 'License restored successfully.'
+    ),
+
     'delete' => array(
         'confirm'   => 'Are you sure you wish to delete this license?',
         'error'   => 'There was an issue deleting the license. Please try again.',

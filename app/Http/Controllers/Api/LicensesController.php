@@ -82,11 +82,9 @@ class LicensesController extends Controller
             $licenses = $licenses->TextSearch($request->input('search'));
         }
 
-
         $offset = (($licenses) && (request('offset') > $licenses->count())) ? 0 : request('offset', 0);
         $limit = request('limit', 50);
         $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
-
 
         switch ($request->input('sort')) {
                 case 'manufacturer':
@@ -108,7 +106,9 @@ class LicensesController extends Controller
                 break;
         }
 
-
+        if ($request->status === 'Deleted') {
+            $licenses->onlyTrashed();
+        }
 
         $total = $licenses->count();
 

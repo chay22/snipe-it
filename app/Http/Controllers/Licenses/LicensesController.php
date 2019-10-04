@@ -8,6 +8,7 @@ use App\Models\License;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\Actionlog;
 
 /**
  * This controller handles all actions related to Licenses for
@@ -270,4 +271,35 @@ class LicensesController extends Controller
         ->with('item', $license)
         ->with('maintained_list', $maintained_list);
     }
+
+    /**
+     * Retore a deleted license.
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     * @param int $assetId
+     * @since [v1.0]
+     * @return View
+     */
+    public function getRestore($licenseId = null)
+    {
+        // Get asset information
+        $license = License::withTrashed()->find($licenseId);
+        $this->authorize('delete', $license);
+        if (isset($license->id)) {
+            // Restore the asset
+            $license->restore();
+            $license->licenseseats()->restore();
+
+            $logaction = new Actionlog();
+            $logaction->item_type = License::class;
+            $logaction->item_id = $license->id;
+            $logaction->created_at =  date('Y-m-d H:i:s');
+            $logaction->user_id = Auth::user()->id;
+            $logaction->logaction('restored');
+
+            return redirect()->route('licenses.index')->with('success', trans('admin/licenses/message.restore.success'));
+        }
+
+        return redirect()->route('licenses.index')->with('error', trans('admin/licenses/message.does_not_exist'));
+    }    
 }

@@ -46,6 +46,11 @@ Route::group([ 'prefix' => 'licenses', 'middleware' => ['auth'] ], function () {
         'uses' => 'Licenses\LicenseFilesController@show'
     ]);
 
+    Route::get('{licenseId}/restore', [
+        'as' => 'restore/licenses',
+        'uses' => 'Licenses\LicensesController@getRestore'
+    ]);    
+
     Route::post('bulkedit', [
         'as'   => 'licenses/bulkedit',
         'uses' => 'Licenses\BulkLicensesController@edit'
@@ -66,11 +71,11 @@ Route::group([ 'prefix' => 'licenses', 'middleware' => ['auth'] ], function () {
              'as' => 'licenses/bulkcheckout',
              'uses' => 'Licenses\BulkLicensesController@showCheckout'
     ]);
-    
+
     Route::post( 'bulkcheckout',  [
         'as' => 'licenses/bulkcheckout',
         'uses' => 'Licenses\BulkLicensesController@storeCheckout'
-    ]);    
+    ]);
 });
 
 Route::resource('licenses', 'Licenses\LicensesController', [

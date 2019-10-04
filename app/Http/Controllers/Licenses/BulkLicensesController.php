@@ -75,13 +75,12 @@ class BulkLicensesController extends Controller
             || ($request->filled('manufacturer_id'))
             || ($request->filled('license_name'))
             || ($request->filled('license_email'))
-            || ($request->filled('reassignable'))
             || ($request->filled('supplier_id'))
             || ($request->filled('purchase_cost'))
             || ($request->filled('purchase_date'))
+            || ($request->filled('expiration_date'))
             || ($request->filled('termination_date'))
             || ($request->filled('purchase_order'))
-            || ($request->filled('maintained'))
         ) {
             foreach ($licenses as $licenseId) {
                 $this->update_array = [];
@@ -89,10 +88,9 @@ class BulkLicensesController extends Controller
                 $this->conditionallyAddItem('manufacturer_id')
                     ->conditionallyAddItem('license_name')
                     ->conditionallyAddItem('license_email')
-                    ->conditionallyAddItem('reassignable')
-                    ->conditionallyAddItem('supplier_id')
                     ->conditionallyAddItem('supplier_id')
                     ->conditionallyAddItem('purchase_date')
+                    ->conditionallyAddItem('expiration_date')
                     ->conditionallyAddItem('termination_date')
                     ->conditionallyAddItem('purchase_order');
 
@@ -105,10 +103,6 @@ class BulkLicensesController extends Controller
                     if ($request->input('company_id')=="clear") {
                         $this->update_array['company_id'] = null;
                     }
-                }
-
-                if ($request->filled('maintained')) {
-                    $this->updated_array['maintained']  = $request->maintained;
                 }
 
                 DB::table('licenses')
