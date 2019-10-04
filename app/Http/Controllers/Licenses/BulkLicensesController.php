@@ -105,9 +105,8 @@ class BulkLicensesController extends Controller
                     }
                 }
 
-                DB::table('licenses')
-                    ->where('id', $licenseId)
-                    ->update($this->update_array);
+                License::find($licenseId)->update($this->update_array);
+
             } // endforeach
             return redirect()->route('licenses.index')->with('success', trans('admin/licenses/message.update.success'));
         // no values given, nothing to update

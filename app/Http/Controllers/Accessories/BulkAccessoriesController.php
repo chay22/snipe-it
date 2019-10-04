@@ -102,9 +102,8 @@ class BulkAccessoriesController extends Controller
                     }
                 }
 
-                DB::table('accessories')
-                    ->where('id', $accessoryId)
-                    ->update($this->update_array);
+                Accessory::find($accessoryId)->update($this->update_array);
+                
             } // endforeach
             return redirect()->route('accessories.index')->with('success', trans('admin/accessories/message.update.success'));
         // no values given, nothing to update

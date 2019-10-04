@@ -117,10 +117,9 @@ class BulkAssetsController extends Controller
                     }
                 }
 
-                DB::table('assets')
-                    ->where('id', $assetId)
-                    ->update($this->update_array);
+                Asset::find($assetId)->update($this->update_array);
             } // endforeach
+            
             return redirect()->route("hardware.index")->with('success', trans('admin/hardware/message.update.success'));
         // no values given, nothing to update
         }
