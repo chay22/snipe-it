@@ -16,6 +16,9 @@ class LicensePresenter extends Presenter
     {
         $layout = [
             [
+                "field" => "checkbox",
+                "checkbox" => true
+            ], [
                 "field" => "id",
                 "searchable" => false,
                 "sortable" => true,
@@ -209,7 +212,7 @@ class LicensePresenter extends Presenter
      */
     public function nameUrl()
     {
-        return (string)link_to_route('licenses.show', $this->name, $this->id);
+        return (string) link_to_route('licenses.show', $this->name, $this->id);
     }
 
     /**
