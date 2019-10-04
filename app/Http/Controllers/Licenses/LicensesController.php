@@ -276,7 +276,7 @@ class LicensesController extends Controller
      * Retore a deleted license.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @param int $assetId
+     * @param int $licenseId
      * @since [v1.0]
      * @return View
      */
