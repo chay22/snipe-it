@@ -23,6 +23,11 @@ Route::group([ 'prefix' => 'accessories', 'middleware' => ['auth']], function ()
         'as' => 'checkin/accessory', 'uses' => 'Accessories\AccessoryCheckinController@store'
     ]);
 
+    Route::get('{accessoryId}/restore', [
+        'as' => 'restore/accessories',
+        'uses' => 'Accessories\AccessoriesController@getRestore'
+    ]);
+
     Route::post('bulkedit', [
         'as'   => 'accessories/bulkedit',
         'uses' => 'Accessories\BulkAccessoriesController@edit'

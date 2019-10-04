@@ -9,6 +9,7 @@ use App\Models\Company;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Redirect;
+use App\Models\Actionlog;
 
 /** This controller handles all actions related to Accessories for
  * the Snipe-IT Asset Management application.
@@ -204,4 +205,34 @@ class AccessoriesController extends Controller
         }
         return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.does_not_exist', ['id' => $accessoryID]));
     }
+
+    /**
+     * Retore a deleted license.
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     * @param int $accessoryId
+     * @since [v1.0]
+     * @return View
+     */
+    public function getRestore($accessoryId = null)
+    {
+        // Get asset information
+        $accessory = Accessory::withTrashed()->find($accessoryId);
+        $this->authorize('create', $accessory);
+        if (isset($accessory->id)) {
+            // Restore the accessory
+            $accessory->restore();
+
+            $logaction = new Actionlog();
+            $logaction->item_type = Accessory::class;
+            $logaction->item_id = $accessory->id;
+            $logaction->created_at =  date('Y-m-d H:i:s');
+            $logaction->user_id = Auth::user()->id;
+            $logaction->logaction('restored');
+
+            return redirect()->route('accessories.index')->with('success', trans('admin/accessories/message.restore.success'));
+        }
+
+        return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.does_not_exist'));
+    }      
 }

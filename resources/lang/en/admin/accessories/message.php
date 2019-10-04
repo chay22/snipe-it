@@ -15,6 +15,11 @@ return array(
         'success' => 'The accessory was updated successfully.'
     ),
 
+    'restore' => array(
+        'error'         => 'Accessory was not restored, please try again',
+        'success'       => 'Accessory restored successfully.'
+    ),
+
     'delete' => array(
         'confirm'   => 'Are you sure you wish to delete this accessory?',
         'error'   => 'There was an issue deleting the accessory. Please try again.',
