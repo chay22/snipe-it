@@ -14,6 +14,11 @@ return array(
         'success' => 'Consumable updated successfully.'
     ),
 
+    'restore' => array(
+        'error'         => 'Consumable was not restored, please try again',
+        'success'       => 'Consumable restored successfully.'
+    ),
+
     'delete' => array(
         'confirm'   => 'Are you sure you wish to delete this consumable?',
         'error'   => 'There was an issue deleting the consumable. Please try again.',

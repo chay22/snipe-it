@@ -20,29 +20,50 @@
 
     <div class="box box-default">
       <div class="box-body">
-        <table
-                data-columns="{{ \App\Presenters\ConsumablePresenter::dataTableLayout() }}"
-                data-cookie-id-table="consumablesTable"
-                data-pagination="true"
-                data-id-table="consumablesTable"
-                data-search="true"
-                data-side-pagination="server"
-                data-show-columns="true"
-                data-show-export="true"
-                data-show-footer="true"
-                data-show-refresh="true"
-                data-sort-order="asc"
-                data-sort-name="name"
-                data-toolbar="#toolbar"
-                id="consumablesTable"
-                class="table table-striped snipe-table"
-                data-url="{{ route('api.consumables.index') }}"
-                data-export-options='{
-                "fileName": "export-consumables-{{ date('Y-m-d') }}",
-                "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                }'>
-        </table>
+        {{ Form::open([
+          'method' => 'POST',
+          'route' => ['consumables/bulkedit'],
+          'class' => 'form-inline',
+           'id' => 'bulkForm']) }}
+          <div class="row">
+            <div class="col-md-12">
+              @if (request()->get('status')!='Deleted')
+              <div id="toolbar">
+                <select name="bulk_actions" class="form-control select2">
+                  <option value="edit">{{ trans('button.edit') }}</option>
+                  <option value="delete">{{ trans('button.delete') }}</option>
+                </select>
+                <button class="btn btn-primary" id="bulkEdit" disabled>Go</button>
+              </div>
+              @endif
 
+              <table
+                  data-click-to-select="true"
+                  data-columns="{{ \App\Presenters\ConsumablePresenter::dataTableLayout() }}"
+                  data-cookie-id-table="consumablesTable"
+                  data-pagination="true"
+                  data-id-table="consumablesTable"
+                  data-search="true"
+                  data-side-pagination="server"
+                  data-show-columns="true"
+                  data-show-export="true"
+                  data-show-footer="true"
+                  data-show-refresh="true"
+                  data-sort-order="asc"
+                  data-sort-name="name"
+                  data-toolbar="#toolbar"
+                  id="consumablesTable"
+                  class="table table-striped snipe-table"
+                  data-url="{{ route('api.consumables.index', ['status' => request('status')]) }}"
+                  data-export-options='{
+                  "fileName": "export-consumables-{{ date('Y-m-d') }}",
+                  "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
+                  }'>
+              </table>
+
+            </div><!-- /.col -->
+          </div><!-- /.row -->
+        {{ Form::close() }}
       </div><!-- /.box-body -->
     </div><!-- /.box -->
 

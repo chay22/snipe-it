@@ -52,7 +52,19 @@ class ConsumablesTransformer
             'checkin' => Gate::allows('checkin', Consumable::class) ? true : false,
             'update' => Gate::allows('update', Consumable::class) ? true : false,
             'delete' => Gate::allows('delete', Consumable::class) ? true : false,
+            'restore' => false,
         ];
+
+        if ($consumable->deleted_at) {
+            $permissions_array['available_actions'] = [
+                'checkout' => false,
+                'checkin' =>  false,
+                'update' => false,
+                'delete' => false,
+                'restore' => Gate::allows('create', Consumable::class) ? true : false,
+            ];
+        }
+
         $array += $permissions_array;
         return $array;
     }

@@ -70,7 +70,9 @@ class ConsumablesController extends Controller
                 break;
         }
 
-
+        if ($request->status === 'Deleted') {
+            $consumables->onlyTrashed();
+        }
 
         $total = $consumables->count();
         $consumables = $consumables->skip($offset)->take($limit)->get();

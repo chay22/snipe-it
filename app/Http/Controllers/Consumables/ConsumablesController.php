@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\Consumable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Input;
+use App\Models\Actionlog;
 
 /**
  * This controller handles all actions related to Consumables for
@@ -193,4 +194,34 @@ class ConsumablesController extends Controller
             ->with('error', trans('admin/consumables/message.does_not_exist'));
     }
 
+
+    /**
+     * Retore a deleted consumable.
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     * @param int $consumableId
+     * @since [v1.0]
+     * @return View
+     */
+    public function getRestore($consumableId = null)
+    {
+        // Get consumable information
+        $consumable = Consumable::withTrashed()->find($consumableId);
+        $this->authorize('create', $consumable);
+        if (isset($consumable->id)) {
+            // Restore the consumable
+            $consumable->restore();
+
+            $logaction = new Actionlog();
+            $logaction->item_type = Consumable::class;
+            $logaction->item_id = $consumable->id;
+            $logaction->created_at =  date('Y-m-d H:i:s');
+            $logaction->user_id = Auth::user()->id;
+            $logaction->logaction('restored');
+
+            return redirect()->route('consumables.index')->with('success', trans('admin/consumables/message.restore.success'));
+        }
+
+        return redirect()->route('consumables.index')->with('error', trans('admin/consumables/message.does_not_exist'));
+    } 
 }

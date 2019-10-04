@@ -11,6 +11,26 @@
             '{consumableID}/checkout',
             [ 'as' => 'checkout/consumable', 'uses' => 'Consumables\ConsumableCheckoutController@store' ]
         );
+
+        Route::get('{consumableId}/restore', [
+            'as' => 'restore/consumables',
+            'uses' => 'Consumables\ConsumablesController@getRestore'
+        ]);
+
+        Route::post('bulkedit', [
+            'as'   => 'consumables/bulkedit',
+            'uses' => 'Consumables\BulkConsumablesController@edit'
+        ]);
+        
+        Route::post('bulkdelete', [
+            'as'   => 'consumables/bulkdelete',
+            'uses' => 'Consumables\BulkConsumablesController@destroy'
+        ]);
+
+        Route::post('bulksave', [
+            'as'   => 'consumables/bulksave',
+            'uses' => 'Consumables\BulkConsumablesController@update'
+        ]);        
     });
 
     Route::resource('consumables', 'Consumables\ConsumablesController', [
