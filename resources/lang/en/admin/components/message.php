@@ -11,7 +11,8 @@ return array(
 
     'update' => array(
         'error'   => 'Component was not updated, please try again',
-        'success' => 'Component updated successfully.'
+        'success' => 'Component updated successfully.',
+        'nothing_updated'   =>  'No fields were selected, so nothing was updated.'
     ),
 
     'delete' => array(
@@ -20,7 +21,12 @@ return array(
         'success' => 'The component was deleted successfully.'
     ),
 
-     'checkout' => array(
+    'restore' => array(
+        'error'         => 'Component was not restored, please try again',
+        'success'       => 'Component restored successfully.'
+    ),
+
+    'checkout' => array(
         'error'   		=> 'Component was not checked out, please try again',
         'success' 		=> 'Component checked out successfully.',
         'user_does_not_exist' => 'That user is invalid. Please try again.'

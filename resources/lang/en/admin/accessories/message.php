@@ -12,7 +12,8 @@ return array(
 
     'update' => array(
         'error'   => 'The accessory was not updated, please try again',
-        'success' => 'The accessory was updated successfully.'
+        'success' => 'The accessory was updated successfully.',
+        'nothing_updated'   =>  'No fields were selected, so nothing was updated.'
     ),
 
     'restore' => array(

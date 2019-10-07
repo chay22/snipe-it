@@ -53,7 +53,18 @@ class ComponentsTransformer
             'checkin' => (bool) Gate::allows('checkin', Component::class),
             'update' => (bool) Gate::allows('update', Component::class),
             'delete' => (bool) Gate::allows('delete', Component::class),
+            'restore' => false,
         ];
+
+        if ($component->deleted_at) {
+            $permissions_array['available_actions'] = [
+                'checkout' => false,
+                'checkin' =>  false,
+                'update' => false,
+                'delete' => false,
+                'restore' => Gate::allows('create', Component::class) ? true : false,
+            ];
+        }     
         $array += $permissions_array;
 
         return $array;
