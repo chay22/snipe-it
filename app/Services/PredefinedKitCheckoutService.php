@@ -111,6 +111,7 @@ class PredefinedKitCheckoutService
             $quantity = $license->pivot->quantity;
             if ($quantity > count($license->freeSeats)) {
                 $errors[] = trans('admin/kits/general.none_licenses', ['license'=> $license->name, 'qty' => $license->pivot->quantity]);
+                continue;
             }
             for ($i = 0; $i < $quantity; $i++) {
                 $seats_to_add[] = $license->freeSeats[$i];
