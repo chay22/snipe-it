@@ -35,4 +35,13 @@ class AcceptanceTester extends \Codeception\Actor
          $I->click('Login');
          //$I->saveSessionSnapshot('login');
     }
+
+    public static function use_single_login($I)
+    {
+        if ($I->loadSessionSnapshot('login')) return;
+
+        static::test_login($I);
+
+        $I->saveSessionSnapshot('login');
+    }
 }
