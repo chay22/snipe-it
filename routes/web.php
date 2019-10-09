@@ -9,6 +9,28 @@ Route::group(['middleware' => 'auth'], function () {
         'parameters' => ['company' => 'company_id']
     ]);
 
+    Route::group(['prefix' => 'categories'], function () {
+        Route::get('{accessoryId}/restore', [
+            'as' => 'restore/categories',
+            'uses' => 'CategoriesController@getRestore'
+        ]);
+
+        Route::post('bulkedit', [
+            'as'   => 'categories/bulkedit',
+            'uses' => 'BulkCategoriesController@edit'
+        ]);
+        
+        Route::post('bulkdelete', [
+            'as'   => 'categories/bulkdelete',
+            'uses' => 'BulkCategoriesController@destroy'
+        ]);
+
+        Route::post('bulksave', [
+            'as'   => 'categories/bulksave',
+            'uses' => 'BulkCategoriesController@update'
+        ]);
+    });
+
     /*
     * Categories
     */

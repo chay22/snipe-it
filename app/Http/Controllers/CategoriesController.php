@@ -215,4 +215,34 @@ class CategoriesController extends Controller
         return redirect()->route('categories.index')
             ->with('error', trans('admin/categories/message.does_not_exist'));
     }
+
+    /**
+     * Retore a deleted category.
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     * @param int $categoryId
+     * @since [v1.0]
+     * @return View
+     */
+    public function getRestore($categoryId = null)
+    {
+        // Get asset information
+        $category = License::withTrashed()->find($licenseId);
+        $this->authorize('delete', $category);
+        if (isset($category->id)) {
+            // Restore the asset
+            $category->restore();
+
+            $logaction = new Actionlog();
+            $logaction->item_type = License::class;
+            $logaction->item_id = $category->id;
+            $logaction->created_at =  date('Y-m-d H:i:s');
+            $logaction->user_id = Auth::user()->id;
+            $logaction->logaction('restored');
+
+            return redirect()->route('categories.index')->with('success', trans('admin/categories/message.restore.success'));
+        }
+
+        return redirect()->route('categories.index')->with('error', trans('admin/categories/message.does_not_exist'));
+    }    
 }
