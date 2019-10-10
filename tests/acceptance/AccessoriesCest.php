@@ -16,8 +16,7 @@ class AccessoriesCest
         $I->lookForwardTo('seeing it load without errors');
 
         $I->amOnPage('/accessories');
-        $I->wait(3);
-        $I->waitForElement('table#accessoriesTable', 3); // secs
+        $I->waitForElement('table#accessoriesTable tbody');
         $I->seeElement('table#accessoriesTable thead');
         $I->seeElement('table#accessoriesTable tbody');
         $I->seeNumberOfElements('table#accessoriesTable tr', [1, 30]);
@@ -29,7 +28,7 @@ class AccessoriesCest
         $I->seeElement('table#accessoriesTable tbody');
 
         $I->clickWithLeftButton('.content-header .pull-right .btn.pull-right');
-        $I->wait(3);
+        $I->wait(1);
     }
 
     public function tryToCreateAccessoryButFailed(AcceptanceTester $I)
@@ -42,14 +41,14 @@ class AccessoriesCest
         $I->wantToTest('accessories create form prevented from submit if nothing is filled');
         $I->dontSeeElement('.help-block.form-error');
         $I->clickWithLeftButton('#create-form [type="submit"]');
-        $I->wait(1);
+        $I->waitForElementVisible('.help-block.form-error');
         $I->seeElement('.help-block.form-error');
 
         // Can not create if all required field not filled: Blocked by backend validation
         $I->wantToTest('accessories create form failed to create accessory when fields do not pass validation');
         $I->fillField('[name="name"]', $test_accessory_name);
         $I->clickWithLeftButton('#create-form [type="submit"]');
-        $I->wait(1);
+        $I->waitForElementVisible('.alert-msg');
         $I->seeNumberOfElements('.alert-msg', [1, 3]);
         $I->seeElement('.alert.alert-danger.fade.in');
     }
@@ -60,12 +59,12 @@ class AccessoriesCest
 
         $I->wantToTest('create new accessory');
         $I->reloadPage();
-        $I->wait(3);
+        $I->waitForText('Create Accessory');
         $I->dontSeeElement('.help-block.form-error');
         $I->fillField('[name="name"]', $test_accessory_name);
         $I->executeJS('$(\'select[name="category_id"]\').select2("open");');
-        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;', 2);
-        $I->wait(1);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForElementVisible('#select2-category_select_id-results .select2-results__option');
 
         $I->executeJS('
         	var category_select = $("select[name=\'category_id\']");
@@ -79,7 +78,7 @@ class AccessoriesCest
         $I->fillField('[name="qty"]', '5');
         $I->click('#create-form [type="submit"]');
 
-        $I->wait(3);
+        $I->waitForElement('table#accessoriesTable tbody');
         $I->seeInTitle('Accessories');
         $I->see('Accessories');
         $I->seeCurrentUrlEquals('/accessories');
@@ -96,8 +95,8 @@ class AccessoriesCest
 
         $I->wantToTest('edit previously created accessory');
         $I->fillField('.search .form-control', $test_accessory_name);
-        $I->wait(1);
         $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('try { return $("table#accessoriesTable").data("bootstrap.table").data[0].name === "'.$test_accessory_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#accessoriesTable").data("bootstrap.table");
 
@@ -107,7 +106,7 @@ class AccessoriesCest
         		}
         	});
         ');
-        $I->wait(3);
+        $I->waitForText('Update Accessory');
         $I->seeInTitle('Update Accessory');
         $I->see('Update Accessory');
 
@@ -117,7 +116,7 @@ class AccessoriesCest
         $I->fillField('[name="name"]', $test_accessory_name);
         $I->fillField('[name="model_number"]', substr(md5(mt_rand()), 0, 14));
         $I->click('#create-form [type="submit"]');
-        $I->wait(3);
+        $I->waitForElement('table#accessoriesTable tbody');
 
         $I->wantTo('ensure previous accessory name does not exists after update');
         $I->fillField('.search .form-control', $old_test_accessory_name);
@@ -136,7 +135,7 @@ class AccessoriesCest
         $I->wantToTest('delete previously created accessory');
         $I->fillField('.search .form-control', $test_accessory_name);
         $I->waitForElementNotVisible('.fixed-table-loading');
-        $I->wait(1);
+        $I->waitForJS('try { return $("table#accessoriesTable").data("bootstrap.table").data[0].name === "'.$test_accessory_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#accessoriesTable").data("bootstrap.table");
 
@@ -146,10 +145,12 @@ class AccessoriesCest
         		}
         	});
         ');
-        $I->wait(3);
+
+        $I->waitForElementVisible('#dataConfirmModal');
+        $I->waitForElementVisible('#dataConfirmOK');
         $I->see('Are you sure you wish to delete ' . $test_accessory_name . '?', '#dataConfirmModal');
         $I->click('#dataConfirmOK');
-        $I->wait(3);
+        $I->waitForElementVisible('.alert.alert-success.fade.in');
         $I->seeElement('.alert.alert-success.fade.in');
         $I->see('Success');
         $I->see('The accessory was deleted successfully');
@@ -157,13 +158,13 @@ class AccessoriesCest
 
     public function tryToBulkEditAccessories(AcceptanceTester $I)
     {
-        	$I->amOnPage('/accessories/create');
+        $I->amOnPage('/accessories/create');
         $this->tryTocreateNewAccessory($I, 'test_accessory_name');
-        $I->wait(2);
+        $I->wait(1);
 
         $I->amOnPage('/accessories/create');
         $this->tryTocreateNewAccessory($I, 'test_accessory_name2');
-        $I->wait(2);
+        $I->wait(1);
 
         $I->wantToTest('bulk edit accessories');
 
@@ -172,7 +173,7 @@ class AccessoriesCest
 
         $I->fillField('.search .form-control', 'MyTestAccessory');
         $I->waitForElementNotVisible('.fixed-table-loading');
-        $I->wait(1);
+        $I->waitForJS('try { return $("table#accessoriesTable").data("bootstrap.table").data.length > 1; } catch(e) { return false; }');
 
         $I->checkOption('input[name="btSelectItem"][data-index="0"]');
         $I->checkOption('input[name="btSelectItem"][data-index="1"]');
@@ -183,22 +184,21 @@ class AccessoriesCest
         $I->executeJS("$('select[name=\"bulk_actions\"]').val('edit').trigger('change');");
         $I->click('#bulkEdit');
 
-        $I->wait(3);
-
+        $I->waitForText('Accessory Update');
         $I->see('Accessory Update');
         $I->see('2 accessories');
 
         $I->fillField('[name="qty"]', 2);
         $I->click('form .box-footer [type="submit"]');
 
-        $I->wait(3);
+        $I->seeElement('table#accessoriesTable tbody');
         $I->seeInTitle('Accessories');
         $I->see('Accessories');
         $I->seeCurrentUrlEquals('/accessories');
         $I->seeElement('.alert.alert-success.fade.in');
         $I->see('Success');
 
-        $I->wait(3);
+        $I->wait(1);
     }
 
     public function tryToBulkDeleteAccessories(AcceptanceTester $I)
@@ -210,7 +210,7 @@ class AccessoriesCest
 
         $I->fillField('.search .form-control', 'MyTestAccessory');
         $I->waitForElementNotVisible('.fixed-table-loading');
-        $I->wait(1);
+        $I->waitForJS('try { return $("table#accessoriesTable").data("bootstrap.table").data.length > 1; } catch(e) { return false; }');
 
         $I->checkOption('input[name="btSelectItem"][data-index="0"]');
         $I->checkOption('input[name="btSelectItem"][data-index="1"]');
@@ -221,8 +221,7 @@ class AccessoriesCest
         $I->executeJS("$('select[name=\"bulk_actions\"]').val('delete').trigger('change');");
         $I->click('#bulkEdit');
 
-        $I->wait(3);
-
+        $I->waitForText('Confirm Bulk Delete Accessories');
         $I->see('Confirm Bulk Delete Accessories');
         $I->see('2 accessories');
 

@@ -16,8 +16,7 @@ class CategoriesCest
         $I->lookForwardTo('seeing it load without errors');
 
         $I->amOnPage('/categories');
-        $I->wait(3);
-        $I->waitForElement('table#categoryTable', 3); // secs
+        $I->waitForElement('table#categoryTable tbody');
         $I->seeElement('table#categoryTable thead');
         $I->seeElement('table#categoryTable tbody');
         $I->seeNumberOfElements('table#categoryTable tr', [1, 30]);
@@ -29,7 +28,7 @@ class CategoriesCest
         $I->seeElement('table#categoryTable tbody');
 
         $I->clickWithLeftButton('.content-header .pull-right .btn.pull-right');
-        $I->wait(3);
+        $I->waitForElement('select[name="category_type"]');
     }
 
     public function tryToCreateCategoryButFailed(AcceptanceTester $I)
@@ -44,14 +43,14 @@ class CategoriesCest
         $I->wantToTest('categories create form prevented from submit if nothing is filled');
         $I->dontSeeElement('.help-block.form-error');
         $I->clickWithLeftButton('#create-form [type="submit"]');
-        $I->wait(1);
+        $I->waitForElementVisible('.help-block.form-error');
         $I->seeElement('.help-block.form-error');
 
         // Can not create if all required field not filled: Blocked by backend validation
         $I->wantToTest('categories create form failed to create category when fields do not pass validation');
         $I->fillField('[name="name"]', $test_category_name);
         $I->clickWithLeftButton('#create-form [type="submit"]');
-        $I->wait(1);
+        $I->waitForElementVisible('.alert-msg');
         $I->seeNumberOfElements('.alert-msg', [1, 3]);
         $I->seeElement('.alert.alert-danger.fade.in');
     }
@@ -62,17 +61,17 @@ class CategoriesCest
 
         $I->wantToTest('create new category');
         $I->reloadPage();
-        $I->wait(3);
+        $I->waitForElement('select[name="category_type"]');
         $I->seeInTitle('Create Category');
         $I->see('Create Category');
         $I->dontSeeElement('.help-block.form-error');
         $I->fillField('[name="name"]', $test_category_name);
         $I->selectOption('select[name="category_type"]', 'accessory');
         $I->executeJS('$(\'select[name="category_type"]\').trigger("change");');
-        $I->wait(1);
+        $I->wait(0.1);
         $I->click('#create-form [type="submit"]');
 
-        $I->wait(3);
+        $I->waitForElement('table#categoryTable tbody');
         $I->seeInTitle('Categories');
         $I->see('Categories');
         $I->seeCurrentUrlEquals('/categories');
@@ -81,6 +80,7 @@ class CategoriesCest
 
         $I->setCookie($cookie_name, $test_category_name);
         $I->saveSessionSnapshot('test_category_name');
+        $I->wait(1);
     }
 
     public function tryToEditCategory(AcceptanceTester $I)
@@ -88,9 +88,10 @@ class CategoriesCest
         $test_category_name = $I->grabCookie('test_category_name');
 
         $I->wantToTest('edit previously created category');
+        $I->waitForElement('table#categoryTable tbody');
         $I->fillField('.search .form-control', $test_category_name);
-        $I->wait(1);
         $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('try { return $("table#categoryTable").data("bootstrap.table").data[0].name === "'.$test_category_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#categoryTable").data("bootstrap.table");
 
@@ -100,7 +101,7 @@ class CategoriesCest
         		}
         	});
         ');
-        $I->wait(3);
+        $I->waitForText('Update Category');
         $I->seeInTitle('Update Category');
         $I->see('Update Category');
 
@@ -111,10 +112,11 @@ class CategoriesCest
         $I->selectOption('select[name="category_type"]', 'asset');
         $I->executeJS('$(\'select[name="category_type"]\').trigger("change");');
         $I->click('#create-form [type="submit"]');
-        $I->wait(3);
+        $I->waitForElement('table#categoryTable tbody');
 
         $I->wantTo('ensure previous category name does not exists after update');
         $I->fillField('.search .form-control', $old_test_category_name);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
         $I->waitForElementNotVisible('.fixed-table-loading');
         $I->see('No matching records found');
 
@@ -128,9 +130,11 @@ class CategoriesCest
         $test_category_name = $I->grabCookie('test_category_name');
 
         $I->wantToTest('delete previously created category');
+        $I->waitForElement('table#categoryTable tbody');
         $I->fillField('.search .form-control', $test_category_name);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
         $I->waitForElementNotVisible('.fixed-table-loading');
-        $I->wait(1);
+        $I->waitForJS('try { return $("table#categoryTable").data("bootstrap.table").data[0].name === "'.$test_category_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#categoryTable").data("bootstrap.table");
 
@@ -140,10 +144,11 @@ class CategoriesCest
         		}
         	});
         ');
-        $I->wait(3);
+        $I->waitForElementVisible('#dataConfirmModal');
+        $I->waitForElementVisible('#dataConfirmOK');
         $I->see('Are you sure you wish to delete ' . $test_category_name . '?', '#dataConfirmModal');
         $I->click('#dataConfirmOK');
-        $I->wait(3);
+        $I->waitForElementVisible('.alert.alert-success.fade.in');
         $I->seeElement('.alert.alert-success.fade.in');
         $I->see('Success');
         $I->see('The category was deleted successfully');
@@ -151,13 +156,13 @@ class CategoriesCest
 
     public function tryToBulkEditCategories(AcceptanceTester $I)
     {
-        	$I->amOnPage('/categories/create');
+        $I->amOnPage('/categories/create');
         $this->tryTocreateNewCategory($I, 'test_category_name');
-        $I->wait(2);
+        $I->wait(1);
 
         $I->amOnPage('/categories/create');
         $this->tryTocreateNewCategory($I, 'test_category_name2');
-        $I->wait(2);
+        $I->wait(1);
 
         $I->wantToTest('bulk edit categories');
 
@@ -166,7 +171,7 @@ class CategoriesCest
 
         $I->fillField('.search .form-control', 'MyTestCategory');
         $I->waitForElementNotVisible('.fixed-table-loading');
-        $I->wait(1);
+        $I->waitForJS('try { return $("table#categoryTable").data("bootstrap.table").data.length > 1; } catch(e) { return false; }');
 
         $I->checkOption('input[name="btSelectItem"][data-index="0"]');
         $I->checkOption('input[name="btSelectItem"][data-index="1"]');
@@ -177,8 +182,7 @@ class CategoriesCest
         $I->executeJS("$('select[name=\"bulk_actions\"]').val('edit').trigger('change');");
         $I->click('#bulkEdit');
 
-        $I->wait(3);
-
+        $I->waitForText('Update Category');
         $I->see('Update Category');
         $I->see('2 categories');
 
@@ -186,14 +190,14 @@ class CategoriesCest
         $I->executeJS('$(\'select[name="category_type"]\').trigger("change");');
         $I->click('form .box-footer [type="submit"]');
 
-        $I->wait(3);
+        $I->waitForElement('table#categoryTable tbody');
         $I->seeInTitle('Categories');
         $I->see('Categories');
         $I->seeCurrentUrlEquals('/categories');
         $I->seeElement('.alert.alert-success.fade.in');
         $I->see('Success');
 
-        $I->wait(3);
+        $I->wait(1);
     }
 
     public function tryToBulkDeleteCategories(AcceptanceTester $I)
@@ -203,9 +207,11 @@ class CategoriesCest
         $test_category_name = $I->grabCookie('test_category_name');
         $test_category_name2 = $I->grabCookie('test_category_name2');
 
+        $I->waitForElement('table#categoryTable tbody');
         $I->fillField('.search .form-control', 'MyTestCategory');
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
         $I->waitForElementNotVisible('.fixed-table-loading');
-        $I->wait(1);
+        $I->waitForJS('try { return $("table#categoryTable").data("bootstrap.table").data.length > 1; } catch(e) { return false; }');
 
         $I->checkOption('input[name="btSelectItem"][data-index="0"]');
         $I->checkOption('input[name="btSelectItem"][data-index="1"]');
@@ -216,13 +222,14 @@ class CategoriesCest
         $I->executeJS("$('select[name=\"bulk_actions\"]').val('delete').trigger('change');");
         $I->click('#bulkEdit');
 
-        $I->wait(3);
-
+        $I->waitForText('Confirm Bulk Delete Categories');
         $I->see('Confirm Bulk Delete Categories');
         $I->see('2 categories');
 
         $I->click('form #submit-button');
 
+        $I->waitForElement('table#categoryTable tbody');
+        $I->waitForElementVisible('.alert.alert-success.fade.in');
         $I->seeCurrentUrlEquals('/categories');
         $I->seeElement('.alert.alert-success.fade.in');
         $I->see('Success');

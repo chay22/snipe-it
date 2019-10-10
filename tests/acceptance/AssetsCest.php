@@ -16,8 +16,7 @@ class AssetsCest
 		$I->lookForwardTo('seeing it load without errors');
 
 		$I->amOnPage('/hardware');
-		$I->wait(3);
-		$I->waitForElement('table#assetsListingTable', 3); // secs
+		$I->waitForElement('table#assetsListingTable tbody');
 		$I->seeElement('table#assetsListingTable thead');
 		$I->seeElement('table#assetsListingTable tbody');
 		$I->seeNumberOfElements('table#assetsListingTable tr', [1, 30]);
@@ -29,7 +28,7 @@ class AssetsCest
 		$I->seeElement('table#assetsListingTable tbody');
 
 		$I->clickWithLeftButton('.content-header .pull-right .btn.pull-right');
-		$I->wait(3);
+		$I->wait(1);
     }
 
     public function tryToCreateAssetButFailed(AcceptanceTester $I)
@@ -37,12 +36,13 @@ class AssetsCest
     	$test_assets_tag = 'MyTestAssets' . substr(md5(mt_rand()), 0, 10);
 
 		$I->seeCurrentUrlEquals('/hardware/create');
+		$I->waitForText('Create Asset');
 		$I->seeElement('select[name="status_id"]');
 
 		$I->wantToTest('assets create form prevented from submit if nothing is filled');
 		$I->dontSeeElement('.help-block.form-error');
 		$I->clickWithLeftButton('#create-form [type="submit"]');
-		$I->wait(1);
+		$I->waitForElementVisible('.help-block.form-error');
 		$I->seeElement('.help-block.form-error');
 
 		// Can not create if all required field not filled: Blocked by backend validation
@@ -59,15 +59,13 @@ class AssetsCest
 
 		$I->wantToTest('create new asset');
 		$I->reloadPage();
-		$I->wait(3);
+		$I->waitForText('Create Asset');
 		$I->dontSeeElement('.help-block.form-error');
 		$I->fillField('[name^="asset_tags"]', $test_assets_tag);
 	
-
-
 		$I->executeJS('$(\'select[name="model_id"]\').select2("open");');
-		$I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;', 2);
-		$I->wait(1);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForElementVisible('#select2-model_select_id-results .select2-results__option');
 
 		$I->executeJS('
 			var model_id_select = $("select[name=\'model_id\']");
@@ -80,28 +78,25 @@ class AssetsCest
 
 
 		$I->executeJS('$(\'select[name="status_id"]\').select2("open");');
-		$I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;', 2);
-		$I->wait(1);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForElementVisible('#select2-status_select_id-results .select2-results__option');
 		$I->executeJS('
 			var status_id_select = $("select[name=\'status_id\']");
-			var first_status_id_data = status_id_select.data("select2").$results.children(":first").data("data");
-			var first_status_id_option = new Option(first_status_id_data.text, first_status_id_data.id, true, true);
-
+			
 			status_id_select.data("select2").$results.children().each(function () {
-			  var data= $(this).data("data")
+			  var data = $(this).data("data");
 
 			  if (data.id == 1) {
-			    var first_status_id_option = new Option(data.text, data.id, true, true);
-			    status_id_select.append(first_status_id_option).trigger("change");
+			    status_id_select.append(new Option(data.text, data.id, true, true)).trigger("change");
 			  }
-			})
+			});
 		');
 		$I->executeJS('$(\'select[name="status_id"]\').select2("close");');
 
 
 		$I->click('#create-form [type="submit"]');
 
-		$I->wait(3);
+		$I->waitForElement('table#assetsListingTable tbody');
 		$I->seeInTitle('Assets');
 		$I->see('Assets');
 		$I->seeCurrentUrlEquals('/hardware');
@@ -118,8 +113,8 @@ class AssetsCest
 
 		$I->wantToTest('edit previously created asset');
 		$I->fillField('.search .form-control', $test_assets_tag);
-		$I->wait(1);
 		$I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('try { return $("table#assetsListingTable").data("bootstrap.table").data[0].asset_tag === "'.$test_assets_tag.'"; } catch(e) { return false; }');
 		$I->executeJS('
 			var bootstrap_table_instance = $("table#assetsListingTable").data("bootstrap.table");
 
@@ -129,7 +124,7 @@ class AssetsCest
 				}
 			});
 		');
-		$I->wait(3);
+		$I->waitForText('Asset Update');
 		$I->seeInTitle('Asset Update');
 		$I->see('Asset Update');
 
@@ -139,8 +134,8 @@ class AssetsCest
 		$I->fillField('[name^="asset_tags"]', $test_assets_tag);
 
 		$I->executeJS('$(\'select[name="model_id"]\').select2("open");');
-		$I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;', 2);
-		$I->wait(1);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForElementVisible('#select2-model_select_id-results .select2-results__option');
 
 		$I->executeJS('
 			var model_id_select = $("select[name=\'model_id\']");
@@ -152,7 +147,7 @@ class AssetsCest
 		$I->executeJS('$(\'select[name="model_id"]\').select2("close");');
 
 		$I->click('#create-form [type="submit"]');
-		$I->wait(3);
+		$I->waitForElement('table#assetsListingTable tbody');
 
 		$I->wantTo('ensure previous asset name does not exists after update');
 		$I->see($test_assets_tag);
@@ -171,15 +166,13 @@ class AssetsCest
 
 		$I->wantToTest('delete previously created asset');
 		$I->amOnPage('/hardware');
-		$I->wait(3);
-		$I->waitForElement('table#assetsListingTable', 3); // secs
+		$I->waitForElement('table#assetsListingTable tbody');
 		$I->seeElement('table#assetsListingTable thead');
 
 		$I->fillField('.search .form-control', $test_assets_tag);
 		$I->waitForElementNotVisible('.fixed-table-loading');
-		$I->wait(1);
-		$I->reloadPage();
-		$I->wait(3);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForJS('try { return $("table#assetsListingTable").data("bootstrap.table").data[0].asset_tag === "'.$test_assets_tag.'"; } catch(e) { return false; }');
 		$I->executeJS('
 			var bootstrap_table_instance = $("table#assetsListingTable").data("bootstrap.table");
 
@@ -189,24 +182,26 @@ class AssetsCest
 				}
 			});
 		');
-		$I->wait(3);
+        $I->waitForElementVisible('#dataConfirmModal');
+        $I->waitForElementVisible('#dataConfirmOK');
 		$I->see('Are you sure you wish to delete ?', '#dataConfirmModal');
 		$I->click('#dataConfirmOK');
-		$I->wait(3);
+
+		$I->waitForText('deleted successfully');
 		$I->seeElement('.alert.alert-success.fade.in');
 		$I->see('Success');
-		$I->see('The asset was deleted successfully');
+		$I->see('deleted successfully');
     }
 
     public function tryToBulkEditAssets(AcceptanceTester $I)
     {
       	$I->amOnPage('/hardware/create');
     	$this->tryTocreateNewAsset($I, 'test_assets_tag');
-    	$I->wait(2);
+    	$I->wait(1);
 
     	$I->amOnPage('/hardware/create');
     	$this->tryTocreateNewAsset($I, 'test_assets_tag2');
-    	$I->wait(2);
+    	$I->wait(1);
 
     	$I->wantToTest('bulk edit assets');
 
@@ -214,11 +209,20 @@ class AssetsCest
     	$test_assets_tag2 = $I->grabCookie('test_assets_tag2');
 
 		$I->fillField('.search .form-control', 'MyTestAssets');
-		$I->waitForElementNotVisible('.fixed-table-loading');
-		$I->wait(1);
 
+		// The bootstrap-table failed to (re-)calculate height of tbody
+		// so it blocks any checkboxes inside it which causes error
+		// element is not clickable. I'll just reload the page
+		// as a quick patch.
+		//
+		// @TODO upgrade and fix bootstrap-table
+		$I->wait(1);
 		$I->reloadPage();
-		$I->wait(3);
+		$I->wait(1);
+		$I->waitForElement('table#assetsListingTable tbody');
+
+		$I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('try { return $("table#assetsListingTable").data("bootstrap.table").data.length > 1; } catch(e) { return false; }');
 
 		$I->checkOption('input[name="btSelectItem"][data-index="0"]');
 		$I->checkOption('input[name="btSelectItem"][data-index="1"]');
@@ -229,22 +233,21 @@ class AssetsCest
     	$I->executeJS("$('select[name=\"bulk_actions\"]').val('edit').trigger('change');");
     	$I->click('#bulkEdit');
 
-    	$I->wait(3);
-
+    	$I->waitForText('Asset Update');
     	$I->see('Asset Update');
     	$I->see('2 assets');
 
     	$I->fillField('[name="warranty_months"]', 24);
     	$I->click('form .box-footer [type="submit"]');
 
-    	$I->wait(3);
+    	$I->waitForElementVisible('.alert.alert-success.fade.in');
 		$I->seeInTitle('Assets');
 		$I->see('Assets');
 		$I->seeCurrentUrlEquals('/hardware');
 		$I->seeElement('.alert.alert-success.fade.in');
 		$I->see('Success');
 
-		$I->wait(3);
+		$I->wait(1);
     }
 
     public function tryToBulkDeleteAssets(AcceptanceTester $I)
@@ -255,8 +258,20 @@ class AssetsCest
     	$test_assets_tag2 = $I->grabCookie('test_assets_tag2');
 
 		$I->fillField('.search .form-control', 'MyTestAssets');
-		$I->waitForElementNotVisible('.fixed-table-loading');
+
+		// The bootstrap-table failed to (re-)calculate height of tbody
+		// so it blocks any checkboxes inside it which causes error
+		// element is not clickable. I'll just reload the page
+		// as a quick patch.
+		//
+		// @TODO upgrade and fix bootstrap-table
 		$I->wait(1);
+		$I->reloadPage();
+		$I->wait(1);
+		$I->waitForElement('table#assetsListingTable tbody');
+
+		$I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('try { return $("table#assetsListingTable").data("bootstrap.table").data.length > 1; } catch(e) { return false; }');
 
 		$I->checkOption('input[name="btSelectItem"][data-index="0"]');
 		$I->checkOption('input[name="btSelectItem"][data-index="1"]');
@@ -267,13 +282,13 @@ class AssetsCest
     	$I->executeJS("$('select[name=\"bulk_actions\"]').val('delete').trigger('change');");
     	$I->click('#bulkEdit');
 
-    	$I->wait(3);
-
+    	$I->waitForText('Confirm Bulk Delete Assets');
     	$I->see('Confirm Bulk Delete Assets');
     	$I->see('2 assets');
 
     	$I->click('form #submit-button');
 
+    	$I->waitForElementVisible('.alert.alert-success.fade.in');
 		$I->seeCurrentUrlEquals('/hardware');
 		$I->seeElement('.alert.alert-success.fade.in');
 		$I->see('Success');

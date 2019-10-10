@@ -16,8 +16,7 @@ class CompaniesCest
         $I->lookForwardTo('seeing it load without errors');
 
         $I->amOnPage('/companies');
-        $I->wait(3);
-        $I->waitForElement('table#companiesTable', 3); // secs
+        $I->waitForElement('table#companiesTable tbody');
         $I->seeElement('table#companiesTable thead');
         $I->seeElement('table#companiesTable tbody');
         $I->seeNumberOfElements('table#companiesTable tr', [1, 30]);
@@ -29,22 +28,23 @@ class CompaniesCest
         $I->seeElement('table#companiesTable tbody');
 
         $I->clickWithLeftButton('.content-header .pull-right .btn.pull-right');
-        $I->wait(3);
+        $I->wait(1);
     }
 
     public function tryToCreateCompanyButFailed(AcceptanceTester $I)
     {
         $test_company_name = 'MyTestCompany' . substr(md5(mt_rand()), 0, 10);
 
+        $I->waitForElementVisible('[name="name"]');
         $I->seeCurrentUrlEquals('/companies/create');
-        $I->seeElement('select[name="company_type"]');
+        $I->seeElement('[name="name"]');
         $I->seeInTitle('Create Company');
         $I->see('Create Company');
 
         $I->wantToTest('companies create form prevented from submit if nothing is filled');
         $I->dontSeeElement('.help-block.form-error');
         $I->clickWithLeftButton('#create-form [type="submit"]');
-        $I->wait(1);
+        $I->waitForElementVisible('.help-block.form-error');
         $I->seeElement('.help-block.form-error');
     }
 
@@ -54,14 +54,14 @@ class CompaniesCest
 
         $I->wantToTest('create new company');
         $I->reloadPage();
-        $I->wait(3);
+        $I->waitForElementVisible('[name="name"]');
         $I->seeInTitle('Create Company');
         $I->see('Create Company');
         $I->dontSeeElement('.help-block.form-error');
         $I->fillField('[name="name"]', $test_company_name);
         $I->click('#create-form [type="submit"]');
 
-        $I->wait(3);
+        $I->waitForElement('table#companiesTable tbody');
         $I->seeInTitle('Companies');
         $I->see('Companies');
         $I->seeCurrentUrlEquals('/companies');
@@ -78,8 +78,9 @@ class CompaniesCest
 
         $I->wantToTest('edit previously created company');
         $I->fillField('.search .form-control', $test_company_name);
-        $I->wait(1);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
         $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('try { return $("table#companiesTable").data("bootstrap.table").data[0].name === "'.$test_company_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#companiesTable").data("bootstrap.table");
 
@@ -89,7 +90,7 @@ class CompaniesCest
         		}
         	});
         ');
-        $I->wait(3);
+        $I->waitForText('Update Company');
         $I->seeInTitle('Update Company');
         $I->see('Update Company');
 
@@ -98,10 +99,11 @@ class CompaniesCest
 
         $I->fillField('[name="name"]', $test_company_name);
         $I->click('#create-form [type="submit"]');
-        $I->wait(3);
+        $I->waitForElement('table#companiesTable tbody');
 
         $I->wantTo('ensure previous company name does not exists after update');
         $I->fillField('.search .form-control', $old_test_company_name);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
         $I->waitForElementNotVisible('.fixed-table-loading');
         $I->see('No matching records found');
 
@@ -115,9 +117,10 @@ class CompaniesCest
         $test_company_name = $I->grabCookie('test_company_name');
 
         $I->wantToTest('delete previously created company');
+        $I->waitForElement('table#companiesTable tbody');
         $I->fillField('.search .form-control', $test_company_name);
         $I->waitForElementNotVisible('.fixed-table-loading');
-        $I->wait(1);
+        $I->waitForJS('try { return $("table#companiesTable").data("bootstrap.table").data[0].name === "'.$test_company_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#companiesTable").data("bootstrap.table");
 
@@ -127,10 +130,13 @@ class CompaniesCest
         		}
         	});
         ');
-        $I->wait(3);
+
+        $I->waitForElementVisible('#dataConfirmModal');
+        $I->waitForElementVisible('#dataConfirmOK');
         $I->see('Are you sure you wish to delete ' . $test_company_name . '?', '#dataConfirmModal');
         $I->click('#dataConfirmOK');
-        $I->wait(3);
+        $I->waitForElement('table#companiesTable tbody');
+        $I->waitForElementVisible('.alert.alert-success.fade.in');
         $I->seeElement('.alert.alert-success.fade.in');
         $I->see('Success');
         $I->see('The company was deleted successfully');
