@@ -16,8 +16,7 @@ class DepreciationsCest
         $I->lookForwardTo('seeing it load without errors');
 
         $I->amOnPage('/depreciations');
-        $I->wait(3);
-        $I->waitForElement('table#depreciationsTable', 3); // secs
+        $I->waitForElement('table#depreciationsTable tbody');
         $I->seeElement('table#depreciationsTable thead');
         $I->seeElement('table#depreciationsTable tbody');
         $I->seeNumberOfElements('table#depreciationsTable tr', [1, 30]);
@@ -29,12 +28,13 @@ class DepreciationsCest
         $I->seeElement('table#depreciationsTable tbody');
 
         $I->clickWithLeftButton('.content-header .pull-right .btn.pull-right');
-        $I->wait(3);
     }
 
     public function tryToCreateDepreciationButFailed(AcceptanceTester $I)
     {
         $test_depreciation_name = 'MyTestDepreciation' . substr(md5(mt_rand()), 0, 10);
+
+        $I->waitForText('Create Depreciation');
 
         $I->seeCurrentUrlEquals('/depreciations/create');
         $I->seeElement('[name="name"]');
@@ -45,12 +45,12 @@ class DepreciationsCest
         $I->wantToTest('depreciations create form prevented from submit if nothing is filled');
         $I->dontSeeElement('.help-block.form-error');
         $I->clickWithLeftButton('#create-form [type="submit"]');
-        $I->wait(1);
+        $I->wait(0.1);
         $I->seeElement('.help-block.form-error');
 
         $I->fillField('[name="name"]', $test_depreciation_name);
         $I->clickWithLeftButton('#create-form [type="submit"]');
-        $I->wait(1);
+        $I->waitForElementVisible('.alert.fade.in');
         $I->seeNumberOfElements('.alert-msg', [1, 3]);
         $I->seeElement('.alert.alert-danger.fade.in');
     }
@@ -61,7 +61,7 @@ class DepreciationsCest
 
         $I->wantToTest('create new depreciation');
         $I->reloadPage();
-        $I->wait(3);
+        $I->waitForText('Create Depreciation');
         $I->seeInTitle('Create Depreciation');
         $I->see('Create Depreciation');
         $I->dontSeeElement('.help-block.form-error');
@@ -70,7 +70,7 @@ class DepreciationsCest
 
         $I->click('#create-form [type="submit"]');
 
-        $I->wait(3);
+        $I->waitForElement('table#depreciationsTable tbody');
         $I->seeInTitle('Depreciations');
         $I->see('Depreciations');
         $I->seeCurrentUrlEquals('/depreciations');
@@ -87,8 +87,9 @@ class DepreciationsCest
 
         $I->wantToTest('edit previously created depreciation');
         $I->fillField('.search .form-control', $test_depreciation_name);
-        $I->wait(1);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
         $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('try { return $("table#depreciationsTable").data("bootstrap.table").data[0].name === "'.$test_depreciation_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#depreciationsTable").data("bootstrap.table");
 
@@ -98,7 +99,7 @@ class DepreciationsCest
         		}
         	});
         ');
-        $I->wait(3);
+        $I->waitForText('Update Depreciation');
         $I->seeInTitle('Update Depreciation');
         $I->see('Update Depreciation');
 
@@ -108,7 +109,7 @@ class DepreciationsCest
         $I->fillField('[name="name"]', $test_depreciation_name);
         $I->fillField('[name="months"]', 5);
         $I->click('#create-form [type="submit"]');
-        $I->wait(3);
+        $I->waitForElement('table#depreciationsTable tbody');
 
         $I->wantTo('ensure previous depreciation name does not exists after update');
         $I->fillField('.search .form-control', $old_test_depreciation_name);
@@ -127,7 +128,7 @@ class DepreciationsCest
         $I->wantToTest('delete previously created depreciation');
         $I->fillField('.search .form-control', $test_depreciation_name);
         $I->waitForElementNotVisible('.fixed-table-loading');
-        $I->wait(1);
+        $I->waitForJS('try { return $("table#depreciationsTable").data("bootstrap.table").data[0].name === "'.$test_depreciation_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#depreciationsTable").data("bootstrap.table");
 
@@ -137,10 +138,11 @@ class DepreciationsCest
         		}
         	});
         ');
-        $I->wait(3);
+        $I->waitForElementVisible('#dataConfirmModal');
+        $I->waitForElementVisible('#dataConfirmOK');
         $I->see('Are you sure you wish to delete ' . $test_depreciation_name . '?', '#dataConfirmModal');
         $I->click('#dataConfirmOK');
-        $I->wait(3);
+        $I->waitForElementVisible('.alert.fade.in');
         $I->seeElement('.alert.alert-success.fade.in');
         $I->see('Success');
         $I->see('deleted successfully');

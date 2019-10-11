@@ -16,8 +16,7 @@ class SuppliersCest
         $I->lookForwardTo('seeing it load without errors');
 
         $I->amOnPage('/suppliers');
-        $I->wait(3);
-        $I->waitForElement('table#suppliersTable', 3); // secs
+        $I->waitForElement('table#suppliersTable tbody');
         $I->seeElement('table#suppliersTable thead');
         $I->seeElement('table#suppliersTable tbody');
         $I->seeNumberOfElements('table#suppliersTable tr', [1, 30]);
@@ -29,13 +28,13 @@ class SuppliersCest
         $I->seeElement('table#suppliersTable tbody');
 
         $I->clickWithLeftButton('.content-header .pull-right .btn.pull-right');
-        $I->wait(3);
     }
 
     public function tryToCreateSupplierButFailed(AcceptanceTester $I)
     {
         $test_supplier_name = 'MyTestSupplier' . substr(md5(mt_rand()), 0, 10);
 
+        $I->waitForText('Create Supplier');
         $I->seeCurrentUrlEquals('/suppliers/create');
         $I->seeElement('select[name="country"]');
         $I->seeInTitle('Create Supplier');
@@ -44,7 +43,7 @@ class SuppliersCest
         $I->wantToTest('suppliers create form prevented from submit if nothing is filled');
         $I->dontSeeElement('.help-block.form-error');
         $I->clickWithLeftButton('#create-form [type="submit"]');
-        $I->wait(1);
+        $I->wait(0.1);
         $I->seeElement('.help-block.form-error');
     }
 
@@ -54,7 +53,7 @@ class SuppliersCest
 
         $I->wantToTest('create new supplier');
         $I->reloadPage();
-        $I->wait(3);
+        $I->waitForText('Create Supplier');
         $I->seeInTitle('Create Supplier');
         $I->see('Create Supplier');
         $I->dontSeeElement('.help-block.form-error');
@@ -67,7 +66,7 @@ class SuppliersCest
         $I->fillField('[name="contact"]', 'Supplier Name');
 
         $I->executeJS('$(\'select[name="country"]\').select2("open");');
-        $I->wait(0.5);
+        $I->wait(0.2);
 
         
         $I->fillField('.select2-search__field', 'indonesia');
@@ -76,7 +75,7 @@ class SuppliersCest
 
         $I->click('#create-form [type="submit"]');
 
-        $I->wait(3);
+        $I->waitForElement('table#suppliersTable tbody');
         $I->seeInTitle('Suppliers');
         $I->see('Suppliers');
         $I->seeCurrentUrlEquals('/suppliers');
@@ -92,9 +91,11 @@ class SuppliersCest
         $test_supplier_name = $I->grabCookie('test_supplier_name');
 
         $I->wantToTest('edit previously created supplier');
+        $I->waitForElement('table#suppliersTable tbody');
         $I->fillField('.search .form-control', $test_supplier_name);
-        $I->wait(1);
         $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForJS('try { return $("table#suppliersTable").data("bootstrap.table").data[0].name === "'.$test_supplier_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#suppliersTable").data("bootstrap.table");
 
@@ -104,7 +105,7 @@ class SuppliersCest
         		}
         	});
         ');
-        $I->wait(3);
+        $I->waitForText('Update Supplier');
         $I->seeInTitle('Update Supplier');
         $I->see('Update Supplier');
 
@@ -113,11 +114,12 @@ class SuppliersCest
 
         $I->fillField('[name="name"]', $test_supplier_name);
         $I->click('#create-form [type="submit"]');
-        $I->wait(3);
+        $I->waitForElement('table#suppliersTable tbody');
 
         $I->wantTo('ensure previous supplier name does not exists after update');
         $I->fillField('.search .form-control', $old_test_supplier_name);
         $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
         $I->see('No matching records found');
 
         $I->setCookie('test_supplier_name', $test_supplier_name);
@@ -130,9 +132,11 @@ class SuppliersCest
         $test_supplier_name = $I->grabCookie('test_supplier_name');
 
         $I->wantToTest('delete previously created supplier');
+        $I->waitForElement('table#suppliersTable tbody');
         $I->fillField('.search .form-control', $test_supplier_name);
         $I->waitForElementNotVisible('.fixed-table-loading');
-        $I->wait(1);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForJS('try { return $("table#suppliersTable").data("bootstrap.table").data[0].name === "'.$test_supplier_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#suppliersTable").data("bootstrap.table");
 
@@ -142,10 +146,11 @@ class SuppliersCest
         		}
         	});
         ');
-        $I->wait(3);
+        $I->waitForElementVisible('#dataConfirmModal');
+        $I->waitForElementVisible('#dataConfirmOK');
         $I->see('Are you sure you wish to delete ' . $test_supplier_name . '?', '#dataConfirmModal');
         $I->click('#dataConfirmOK');
-        $I->wait(3);
+        $I->seeElement('.alert.fade.in');
         $I->seeElement('.alert.alert-success.fade.in');
         $I->see('Success');
         $I->see('deleted successfully');

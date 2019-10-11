@@ -9,7 +9,7 @@
 @section('content')
 
 @can('view', \App\Models\CustomFieldset::class)
-<div class="row">
+<div class="row" id="customFieldsetsTableWrapper">
   <div class="col-md-9">
     <div class="box box-default">
 
@@ -33,7 +33,7 @@
                 data-show-refresh="true"
                 data-sort-order="asc"
                 data-sort-name="name"
-                id="customFieldsTable"
+                id="customFieldsetsTable"
                 class="table table-striped snipe-table"
                 data-export-options='{
                 "fileName": "export-fieldsets-{{ date('Y-m-d') }}",
@@ -92,7 +92,7 @@
 </div> <!-- .row-->
 @endcan
 @can('view', \App\Models\CustomField::class)
-<div class="row">
+<div class="row" id="customFieldsTableWrapper">
   <div class="col-md-12">
     <div class="box box-default">
       <div class="box-header with-border">

@@ -16,8 +16,7 @@ class DepartmentsCest
         $I->lookForwardTo('seeing it load without errors');
 
         $I->amOnPage('/departments');
-        $I->wait(3);
-        $I->waitForElement('table#departmentsTable', 3); // secs
+        $I->waitForElement('table#departmentsTable tbody');
         $I->seeElement('table#departmentsTable thead');
         $I->seeElement('table#departmentsTable tbody');
         $I->seeNumberOfElements('table#departmentsTable tr', [1, 30]);
@@ -44,7 +43,7 @@ class DepartmentsCest
         $I->wantToTest('departments create form prevented from submit if nothing is filled');
         $I->dontSeeElement('.help-block.form-error');
         $I->clickWithLeftButton('#create-form [type="submit"]');
-        $I->wait(1);
+        $I->wait(0.1);
         $I->seeElement('.help-block.form-error');
     }
 
@@ -54,15 +53,15 @@ class DepartmentsCest
 
         $I->wantToTest('create new department');
         $I->reloadPage();
-        $I->wait(3);
+        $I->waitForElementNotVisible('.help-block.form-error');
         $I->seeInTitle('Create Department');
         $I->see('Create Department');
         $I->dontSeeElement('.help-block.form-error');
         $I->fillField('[name="name"]', $test_department_name);
 
         $I->executeJS('$(\'select[name="company_id"]\').select2("open");');
-        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;', 2);
-        $I->wait(1);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForElementVisible('#select2-company_select-results .select2-results__option');
 
         $I->executeJS('
             var company_id_select = $("select[name=\'company_id\']");
@@ -75,8 +74,8 @@ class DepartmentsCest
 
 
         $I->executeJS('$(\'select[name="manager_id"]\').select2("open");');
-        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;', 2);
-        $I->wait(1);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForElementVisible('#select2-assigned_user_select-results .select2-results__option');
 
         $I->executeJS('
             var manager_id_select = $("select[name=\'manager_id\']");
@@ -89,8 +88,8 @@ class DepartmentsCest
 
 
         $I->executeJS('$(\'select[name="location_id"]\').select2("open");');
-        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;', 2);
-        $I->wait(1);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForElementVisible('#select2-location_id_location_select-results .select2-results__option');
 
         $I->executeJS('
             var location_id_select = $("select[name=\'location_id\']");
@@ -120,9 +119,10 @@ class DepartmentsCest
         $test_department_name = $I->grabCookie('test_department_name');
 
         $I->wantToTest('edit previously created department');
+        $I->waitForElement('table#departmentsTable tbody');
         $I->fillField('.search .form-control', $test_department_name);
-        $I->wait(1);
         $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('try { return $("table#departmentsTable").data("bootstrap.table").data[0].name === "'.$test_department_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#departmentsTable").data("bootstrap.table");
 
@@ -132,7 +132,7 @@ class DepartmentsCest
         		}
         	});
         ');
-        $I->wait(3);
+        $I->waitForText('Update Department');
         $I->seeInTitle('Update Department');
         $I->see('Update Department');
 
@@ -141,7 +141,7 @@ class DepartmentsCest
 
         $I->fillField('[name="name"]', $test_department_name);
         $I->click('#create-form [type="submit"]');
-        $I->wait(3);
+        $I->waitForElement('table#departmentsTable tbody');
 
         $I->wantTo('ensure previous department name does not exists after update');
         $I->fillField('.search .form-control', $old_test_department_name);
@@ -160,7 +160,7 @@ class DepartmentsCest
         $I->wantToTest('delete previously created department');
         $I->fillField('.search .form-control', $test_department_name);
         $I->waitForElementNotVisible('.fixed-table-loading');
-        $I->wait(1);
+        $I->waitForJS('try { return $("table#departmentsTable").data("bootstrap.table").data[0].name === "'.$test_department_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#departmentsTable").data("bootstrap.table");
 
@@ -170,12 +170,13 @@ class DepartmentsCest
         		}
         	});
         ');
-        $I->wait(3);
+        $I->waitForElementVisible('#dataConfirmModal');
+        $I->waitForElementVisible('#dataConfirmOK');
         $I->see('Are you sure you wish to delete ' . $test_department_name . '?', '#dataConfirmModal');
         $I->click('#dataConfirmOK');
-        $I->wait(3);
+        $I->waitForElementVisible('.alert.alert-success.fade.in');
         $I->seeElement('.alert.alert-success.fade.in');
         $I->see('Success');
-        $I->see('The department was deleted successfully');
+        $I->see('deleted successfully');
     }
 }

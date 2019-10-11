@@ -16,8 +16,7 @@ class ManufacturersCest
         $I->lookForwardTo('seeing it load without errors');
 
         $I->amOnPage('/manufacturers');
-        $I->wait(3);
-        $I->waitForElement('table#manufacturersTable', 3); // secs
+        $I->waitForElement('table#manufacturersTable tbody');
         $I->seeElement('table#manufacturersTable thead');
         $I->seeElement('table#manufacturersTable tbody');
         $I->seeNumberOfElements('table#manufacturersTable tr', [1, 30]);
@@ -29,13 +28,13 @@ class ManufacturersCest
         $I->seeElement('table#manufacturersTable tbody');
 
         $I->clickWithLeftButton('.content-header .pull-right .btn.pull-right');
-        $I->wait(3);
     }
 
     public function tryToCreateManufacturerButFailed(AcceptanceTester $I)
     {
         $test_manufacturer_name = 'MyTestManufacturer' . substr(md5(mt_rand()), 0, 10);
 
+        $I->waitForText('Create Manufacturer');
         $I->seeCurrentUrlEquals('/manufacturers/create');
         $I->seeElement('[name="url"]');
         $I->seeInTitle('Create Manufacturer');
@@ -44,7 +43,7 @@ class ManufacturersCest
         $I->wantToTest('manufacturers create form prevented from submit if nothing is filled');
         $I->dontSeeElement('.help-block.form-error');
         $I->clickWithLeftButton('#create-form [type="submit"]');
-        $I->wait(1);
+        $I->wait(0.1);
         $I->seeElement('.help-block.form-error');
     }
 
@@ -54,7 +53,7 @@ class ManufacturersCest
 
         $I->wantToTest('create new manufacturer');
         $I->reloadPage();
-        $I->wait(3);
+        $I->waitForText('Create Manufacturer');
         $I->seeInTitle('Create Manufacturer');
         $I->see('Create Manufacturer');
         $I->dontSeeElement('.help-block.form-error');
@@ -64,7 +63,7 @@ class ManufacturersCest
 
         $I->click('#create-form [type="submit"]');
 
-        $I->wait(3);
+        $I->waitForElement('table#manufacturersTable tbody');
         $I->seeInTitle('Manufacturers');
         $I->see('Manufacturers');
         $I->seeCurrentUrlEquals('/manufacturers');
@@ -81,8 +80,9 @@ class ManufacturersCest
 
         $I->wantToTest('edit previously created manufacturer');
         $I->fillField('.search .form-control', $test_manufacturer_name);
-        $I->wait(1);
+        $I->waitForElement('table#manufacturersTable tbody');
         $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('try { return $("table#manufacturersTable").data("bootstrap.table").data[0].name === "'.$test_manufacturer_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#manufacturersTable").data("bootstrap.table");
 
@@ -92,7 +92,7 @@ class ManufacturersCest
         		}
         	});
         ');
-        $I->wait(3);
+        $I->waitForText('Update Manufacturer');
         $I->seeInTitle('Update Manufacturer');
         $I->see('Update Manufacturer');
 
@@ -101,11 +101,12 @@ class ManufacturersCest
 
         $I->fillField('[name="name"]', $test_manufacturer_name);
         $I->click('#create-form [type="submit"]');
-        $I->wait(3);
+        $I->waitForElement('table#manufacturersTable tbody');
 
         $I->wantTo('ensure previous manufacturer name does not exists after update');
         $I->fillField('.search .form-control', $old_test_manufacturer_name);
         $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
         $I->see('No matching records found');
 
         $I->setCookie('test_manufacturer_name', $test_manufacturer_name);
@@ -120,7 +121,8 @@ class ManufacturersCest
         $I->wantToTest('delete previously created manufacturer');
         $I->fillField('.search .form-control', $test_manufacturer_name);
         $I->waitForElementNotVisible('.fixed-table-loading');
-        $I->wait(1);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForJS('try { return $("table#manufacturersTable").data("bootstrap.table").data[0].name === "'.$test_manufacturer_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#manufacturersTable").data("bootstrap.table");
 
@@ -130,12 +132,13 @@ class ManufacturersCest
         		}
         	});
         ');
-        $I->wait(3);
+        $I->waitForElementVisible('#dataConfirmModal');
+        $I->waitForElementVisible('#dataConfirmOK');
         $I->see('Are you sure you wish to delete ' . $test_manufacturer_name . '?', '#dataConfirmModal');
         $I->click('#dataConfirmOK');
-        $I->wait(3);
+        $I->seeElement('.alert.fade.in');
         $I->seeElement('.alert.alert-success.fade.in');
         $I->see('Success');
-        $I->see('The manufacturer was deleted successfully');
+        $I->see('deleted successfully');
     }
 }

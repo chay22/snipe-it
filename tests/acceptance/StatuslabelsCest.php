@@ -16,8 +16,7 @@ class StatuslabelsCest
         $I->lookForwardTo('seeing it load without errors');
 
         $I->amOnPage('/statuslabels');
-        $I->wait(3);
-        $I->waitForElement('table#statuslabelsTable', 3); // secs
+        $I->waitForElement('table#statuslabelsTable tbody');
         $I->seeElement('table#statuslabelsTable thead');
         $I->seeElement('table#statuslabelsTable tbody');
         $I->seeNumberOfElements('table#statuslabelsTable tr', [1, 30]);
@@ -29,13 +28,13 @@ class StatuslabelsCest
         $I->seeElement('table#statuslabelsTable tbody');
 
         $I->clickWithLeftButton('.content-header .pull-right .btn.pull-right');
-        $I->wait(3);
     }
 
     public function tryToCreateStatuslabelButFailed(AcceptanceTester $I)
     {
         $test_statuslabel_name = 'MyTestStatuslabel' . substr(md5(mt_rand()), 0, 10);
 
+        $I->waitForText('Create Status Label');
         $I->seeCurrentUrlEquals('/statuslabels/create');
         $I->seeElement('select[name="statuslabel_types"]');
         $I->seeInTitle('Create Status Label');
@@ -44,7 +43,7 @@ class StatuslabelsCest
         $I->wantToTest('statuslabels create form prevented from submit if nothing is filled');
         $I->dontSeeElement('.help-block.form-error');
         $I->clickWithLeftButton('#create-form [type="submit"]');
-        $I->wait(1);
+        $I->wait(0.1);
         $I->seeElement('.help-block.form-error');
     }
 
@@ -54,7 +53,7 @@ class StatuslabelsCest
 
         $I->wantToTest('create new statuslabel');
         $I->reloadPage();
-        $I->wait(3);
+        $I->waitForText('Create Status Label');
         $I->seeInTitle('Create Status Label');
         $I->see('Create Status Label');
         $I->dontSeeElement('.help-block.form-error');
@@ -64,7 +63,7 @@ class StatuslabelsCest
 
         $I->click('#create-form [type="submit"]');
 
-        $I->wait(3);
+        $I->waitForElement('table#statuslabelsTable tbody');
         $I->seeInTitle('Status Label');
         $I->see('Status Label');
         $I->seeCurrentUrlEquals('/statuslabels');
@@ -80,8 +79,10 @@ class StatuslabelsCest
         $test_statuslabel_name = $I->grabCookie('test_statuslabel_name');
 
         $I->wantToTest('edit previously created statuslabel');
+        $I->waitForElement('table#statuslabelsTable tbody');
         $I->fillField('.search .form-control', $test_statuslabel_name);
-        $I->wait(1);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForJS('try { return $("table#statuslabelsTable").data("bootstrap.table").data[0].name === "'.$test_statuslabel_name.'"; } catch(e) { return false; }');
         $I->waitForElementNotVisible('.fixed-table-loading');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#statuslabelsTable").data("bootstrap.table");
@@ -92,7 +93,7 @@ class StatuslabelsCest
         		}
         	});
         ');
-        $I->wait(3);
+        $I->waitForText('Update Status Label');
         $I->seeInTitle('Update Status Label');
         $I->see('Update Status Label');
 
@@ -106,6 +107,7 @@ class StatuslabelsCest
         $I->wantTo('ensure previous statuslabel name does not exists after update');
         $I->fillField('.search .form-control', $old_test_statuslabel_name);
         $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
         $I->see('No matching records found');
 
         $I->setCookie('test_statuslabel_name', $test_statuslabel_name);
@@ -120,7 +122,8 @@ class StatuslabelsCest
         $I->wantToTest('delete previously created statuslabel');
         $I->fillField('.search .form-control', $test_statuslabel_name);
         $I->waitForElementNotVisible('.fixed-table-loading');
-        $I->wait(1);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForJS('try { return $("table#statuslabelsTable").data("bootstrap.table").data[0].name === "'.$test_statuslabel_name.'"; } catch(e) { return false; }');
         $I->executeJS('
         	var bootstrap_table_instance = $("table#statuslabelsTable").data("bootstrap.table");
 
@@ -130,10 +133,11 @@ class StatuslabelsCest
         		}
         	});
         ');
-        $I->wait(3);
+        $I->waitForElementVisible('#dataConfirmModal');
+        $I->waitForElementVisible('#dataConfirmOK');
         $I->see('Are you sure you wish to delete ' . $test_statuslabel_name . '?', '#dataConfirmModal');
         $I->click('#dataConfirmOK');
-        $I->wait(3);
+        $I->seeElement('.alert.fade.in');
         $I->seeElement('.alert.alert-success.fade.in');
         $I->see('Success');
         $I->see('deleted successfully');
