@@ -1,82 +1,241 @@
 <?php
 
-
 class ConsumablesCest
 {
-    public function _before(FunctionalTester $I)
+    public function _before(AcceptanceTester $I)
     {
-         $I->amOnPage('/login');
-         $I->fillField('username', 'admin');
-         $I->fillField('password', 'password');
-         $I->click('Login');
+        AcceptanceTester::use_single_login($I);
+
+        $I->loadSessionSnapshot('test_consumable_name');
     }
 
-    // tests
-    public function tryToTest(FunctionalTester $I)
+    public function tryToLoadConsumablesListingPage(AcceptanceTester $I)
     {
-        $I->wantTo('ensure that the create consumables form loads without errors');
+        $I->am('logged in user');
+        $I->wantTo('ensure that the consumables listing page loads without errors');
         $I->lookForwardTo('seeing it load without errors');
-        $I->amOnPage(route('consumables.create'));
-        $I->dontSee('Create Consumable', '.page-header');
-        $I->see('Create Consumable', 'h1.pull-left');
+
+        $I->amOnPage('/consumables');
+        $I->waitForElement('table#consumablesTable tbody');
+        $I->seeElement('table#consumablesTable thead');
+        $I->seeElement('table#consumablesTable tbody');
+        $I->seeNumberOfElements('table#consumablesTable tr', [1, 30]);
+        $I->seeInTitle('Consumables');
+        $I->see('Consumables');
+
+        $I->seeInPageSource('/consumables');
+        $I->seeElement('table#consumablesTable thead');
+        $I->seeElement('table#consumablesTable tbody');
+
+        $I->clickWithLeftButton('.content-header .pull-right .btn.pull-right');
+        $I->wait(1);
     }
 
-    public function failsEmptyValidation(FunctionalTester $I)
+    public function tryToCreateConsumableButFailed(AcceptanceTester $I)
     {
-        $I->wantTo("Test Validation Fails with blank elements");
-        $I->amOnPage(route('consumables.create'));
-        $I->click('Save');
-        $I->seeElement('.alert-danger');
-        $I->see('The name field is required.', '.alert-msg');
-        $I->see('The category id field is required.', '.alert-msg');
-        $I->see('The qty field is required.', '.alert-msg');
+        $test_consumable_name = 'MyTestConsumable' . substr(md5(mt_rand()), 0, 10);
+
+        $I->seeCurrentUrlEquals('/consumables/create');
+        $I->seeElement('select[name="category_id"]');
+
+        $I->wantToTest('consumables create form prevented from submit if nothing is filled');
+        $I->dontSeeElement('.help-block.form-error');
+        $I->clickWithLeftButton('#create-form [type="submit"]');
+        $I->wait(0.1);
+        $I->seeElement('.help-block.form-error');
+
+        // Can not create if all required field not filled: Blocked by backend validation
+        $I->wantToTest('consumables create form failed to create consumable when fields do not pass validation');
+        $I->fillField('[name="name"]', $test_consumable_name);
+        $I->clickWithLeftButton('#create-form [type="submit"]');
+        $I->waitForElement('.alert-msg');
+        $I->seeNumberOfElements('.alert-msg', [1, 3]);
+        $I->seeElement('.alert.alert-danger.fade.in');
     }
 
-    public function failsShortValidation(FunctionalTester $I)
+    public function tryTocreateNewConsumable(AcceptanceTester $I, $cookie_name = 'test_consumable_name')
     {
-        $I->wantTo("Test Validation Fails with short name");
-        $I->amOnPage(route('consumables.create'));
-        $I->fillField('name', 't2');
-        $I->fillField('qty', '-15');
-        $I->fillField('min_amt', '-15');
-        $I->click('Save');
-        $I->seeElement('.alert-danger');
-        $I->see('The name must be at least 3 characters', '.alert-msg');
-        $I->see('The qty must be at least 0', '.alert-msg');
-        $I->see('The min amt must be at least 0', '.alert-msg');
+        $test_consumable_name = 'MyTestConsumable' . substr(md5(mt_rand()), 0, 10);
+
+        $I->wantToTest('create new consumable');
+        $I->reloadPage();
+        $I->waitForElement('[name="category_id"]');
+        $I->dontSeeElement('.help-block.form-error');
+        $I->fillField('[name="name"]', $test_consumable_name);
+        $I->executeJS('$(\'select[name="category_id"]\').select2("open");');
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForElementVisible('#select2-category_select_id-results .select2-results__option');
+
+        $I->executeJS('
+        	var category_select = $("select[name=\'category_id\']");
+        	var first_category_data = category_select.data("select2").$results.children(":first").data("data");
+        	var first_category_option = new Option(first_category_data.text, first_category_data.id, true, true);
+
+        	category_select.append(first_category_option).trigger("change");
+        ');
+        $I->executeJS('$(\'select[name="category_id"]\').select2("close");');
+
+        $I->fillField('[name="qty"]', '5');
+        $I->click('#create-form [type="submit"]');
+
+        $I->waitForElement('table#consumablesTable tbody');
+        $I->seeInTitle('Consumables');
+        $I->see('Consumables');
+        $I->seeCurrentUrlEquals('/consumables');
+        $I->seeElement('.alert.alert-success.fade.in');
+        $I->see('Success');
+
+        $I->setCookie($cookie_name, $test_consumable_name);
+        $I->saveSessionSnapshot('test_consumable_name');
     }
 
-    public function passesCorrectValidation(FunctionalTester $I)
+    public function tryToEditConsumable(AcceptanceTester $I)
     {
-        $consumable = factory(App\Models\Consumable::class)->states('cardstock')->make([
-            'name' => 'Test Consumable',
-            'model_number' => 23520
-        ]);
-        // dd($consumable);
-        $values = [
-            'category_id'       => $consumable->category_id,
-            'company_id'        => $consumable->company_id,
-            'item_no'           => $consumable->item_no,
-            'manufacturer_id'   => $consumable->manufacturer_id,
-            'min_amt'           => $consumable->min_amt,
-            'model_number'      => $consumable->model_number,
-            'name'              => $consumable->name,
-            'order_number'      => $consumable->order_number,
-            'purchase_cost'     => $consumable->purchase_cost,
-            'purchase_date'     => '2016-01-01',
-            'qty'               => $consumable->qty,
-        ];
-        $I->wantTo("Test Validation Succeeds");
-        $I->amOnPage(route('consumables.create'));
-        $I->submitForm('form#create-form', $values);
-        $I->seeRecord('consumables', $values);
-        $I->seeElement('.alert-success');
+        $test_consumable_name = $I->grabCookie('test_consumable_name');
+
+        $I->wantToTest('edit previously created consumable');
+        $I->waitForElement('table#consumablesTable tbody');
+        $I->fillField('.search .form-control', $test_consumable_name);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('try { return $("table#consumablesTable").data("bootstrap.table").data[0].name === "'.$test_consumable_name.'"; } catch(e) { return false; }');
+        $I->executeJS('
+        	var bootstrap_table_instance = $("table#consumablesTable").data("bootstrap.table");
+
+        	$.each(bootstrap_table_instance.data, function (k, v) {
+        		if (v.name === "'.$test_consumable_name.'") {
+        			window.location.href = $(\'tr[data-index="\'+k+\'"] [data-original-title="Update"]\').attr("href");
+        		}
+        	});
+        ');
+        $I->waitForText('Update Consumable');
+        $I->seeInTitle('Update Consumable');
+        $I->see('Update Consumable');
+
+        $old_test_consumable_name = $test_consumable_name;
+        $test_consumable_name = 'MyTestConsumable' . substr(md5(mt_rand()), 0, 10);
+
+        $I->fillField('[name="name"]', $test_consumable_name);
+        $I->fillField('[name="model_number"]', substr(md5(mt_rand()), 0, 14));
+        $I->click('#create-form [type="submit"]');
+        $I->waitForElement('table#consumablesTable tbody');
+
+        $I->wantTo('ensure previous consumable name does not exists after update');
+        $I->fillField('.search .form-control', $old_test_consumable_name);
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->see('No matching records found');
+
+        $I->setCookie('test_consumable_name', $test_consumable_name);
+        $I->saveSessionSnapshot('test_consumable_name');
+        $I->wait(1);
     }
 
-    public function allowsDelete(FunctionalTester $I)
+    public function tryToDeleteConsumable(AcceptanceTester $I)
     {
-        $I->wantTo('Ensure I can delete a consumable');
-        $I->sendDelete(route('consumables.destroy', $I->getConsumableId()), ['_token' => csrf_token()]);
-        $I->seeResponseCodeIs(200);
+        $test_consumable_name = $I->grabCookie('test_consumable_name');
+
+        $I->wantToTest('delete previously created consumable');
+        $I->fillField('.search .form-control', $test_consumable_name);
+        $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForJS('try { return $("table#consumablesTable").data("bootstrap.table").data[0].name === "'.$test_consumable_name.'"; } catch(e) { return false; }');
+        $I->executeJS('
+        	var bootstrap_table_instance = $("table#consumablesTable").data("bootstrap.table");
+
+        	$.each(bootstrap_table_instance.data, function (k, v) {
+        		if (v.name === "'.$test_consumable_name.'") {
+        			$(\'tr[data-index="\'+k+\'"] .delete-asset\').click();
+        		}
+        	});
+        ');
+        $I->waitForElementVisible('#dataConfirmModal');
+        $I->waitForElementVisible('#dataConfirmOK');
+        $I->see('Are you sure you wish to delete ' . $test_consumable_name . '?', '#dataConfirmModal');
+        $I->click('#dataConfirmOK');
+        $I->waitForElementVisible('.alert.alert-success.fade.in');
+        $I->seeElement('.alert.alert-success.fade.in');
+        $I->see('Success');
+        $I->see('The consumable was deleted successfully');
+    }
+
+    public function tryToBulkEditConsumables(AcceptanceTester $I)
+    {
+        	$I->amOnPage('/consumables/create');
+        $this->tryTocreateNewConsumable($I, 'test_consumable_name');
+        $I->wait(1);
+
+        $I->amOnPage('/consumables/create');
+        $this->tryTocreateNewConsumable($I, 'test_consumable_name2');
+        $I->wait(1);
+
+        $I->wantToTest('bulk edit consumables');
+
+        $test_consumable_name = $I->grabCookie('test_consumable_name');
+        $test_consumable_name2 = $I->grabCookie('test_consumable_name2');
+
+        $I->fillField('.search .form-control', 'MyTestConsumable');
+        $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForJS('try { return $("table#consumablesTable").data("bootstrap.table").data.length > 1; } catch(e) { return false; }');
+
+        $I->checkOption('input[name="btSelectItem"][data-index="0"]');
+        $I->checkOption('input[name="btSelectItem"][data-index="1"]');
+
+        $I->seeCheckboxIsChecked('input[name="btSelectItem"][data-index="0"]');
+        $I->seeCheckboxIsChecked('input[name="btSelectItem"][data-index="1"]');
+
+        $I->executeJS("$('select[name=\"bulk_actions\"]').val('edit').trigger('change');");
+        $I->click('#bulkEdit');
+
+        $I->waitForText('Consumable Update');
+
+        $I->see('Consumable Update');
+        $I->see('2 consumables');
+
+        $I->fillField('[name="qty"]', 2);
+        $I->click('form .box-footer [type="submit"]');
+
+        $I->waitForElement('table#consumablesTable tbody');
+        $I->seeInTitle('Consumables');
+        $I->see('Consumables');
+        $I->seeCurrentUrlEquals('/consumables');
+        $I->seeElement('.alert.alert-success.fade.in');
+        $I->see('Success');
+
+        $I->wait(1);
+    }
+
+    public function tryToBulkDeleteConsumables(AcceptanceTester $I)
+    {
+        $I->wantToTest('bulk delete consumables');
+
+        $test_consumable_name = $I->grabCookie('test_consumable_name');
+        $test_consumable_name2 = $I->grabCookie('test_consumable_name2');
+
+        $I->fillField('.search .form-control', 'MyTestConsumable');
+        $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('return !!window.jQuery && window.jQuery.active == 0;');
+        $I->waitForJS('try { return $("table#consumablesTable").data("bootstrap.table").data.length > 1; } catch(e) { return false; }');
+
+        $I->checkOption('input[name="btSelectItem"][data-index="0"]');
+        $I->checkOption('input[name="btSelectItem"][data-index="1"]');
+
+        $I->seeCheckboxIsChecked('input[name="btSelectItem"][data-index="0"]');
+        $I->seeCheckboxIsChecked('input[name="btSelectItem"][data-index="1"]');
+
+        $I->executeJS("$('select[name=\"bulk_actions\"]').val('delete').trigger('change');");
+        $I->click('#bulkEdit');
+        $I->waitForText('Confirm Bulk Delete Consumables');
+
+        $I->see('Confirm Bulk Delete Consumables');
+        $I->see('2 consumables');
+
+        $I->click('form #submit-button');
+
+        $I->waitForElement('table#consumablesTable tbody');
+        $I->seeCurrentUrlEquals('/consumables');
+        $I->seeElement('.alert.alert-success.fade.in');
+        $I->see('Success');
     }
 }

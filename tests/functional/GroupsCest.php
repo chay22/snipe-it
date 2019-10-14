@@ -1,85 +1,145 @@
 <?php
 
-
-use App\Models\Group;
-
 class GroupsCest
 {
-    public function _before(FunctionalTester $I)
+    public function _before(AcceptanceTester $I)
     {
-         $I->amOnPage('/login');
-         $I->fillField('username', 'admin');
-         $I->fillField('password', 'password');
-         $I->click('Login');
+        AcceptanceTester::use_single_login($I);
+
+        $I->loadSessionSnapshot('test_group_name');
     }
 
-    // tests
-    public function loadsFormWithoutErrors(FunctionalTester $I)
+    public function tryToLoadGroupsListingPage(AcceptanceTester $I)
     {
-        $I->wantTo('ensure that the create groups form loads without errors');
+        $I->am('logged in user');
+        $I->wantTo('ensure that the groups listing page loads without errors');
         $I->lookForwardTo('seeing it load without errors');
+
+        $I->amOnPage(route('groups.index'));
+        $I->waitForElement('table#groupsTable tbody');
+        $I->seeElement('table#groupsTable thead');
+        $I->seeElement('table#groupsTable tbody');
+        $I->seeNumberOfElements('table#groupsTable tr', [1, 30]);
+        $I->seeInTitle('Groups');
+        $I->see('Groups');
+
+        $I->seeInPageSource(route('groups.index'));
+        $I->seeElement('table#groupsTable thead');
+        $I->seeElement('table#groupsTable tbody');
+
         $I->amOnPage(route('groups.create'));
-        $I->seeResponseCodeIs(200);
-        $I->dontSee('Create New Group', '.page-header');
-        $I->see('Create New Group', 'h1.pull-left');
+        $I->wait(1);
     }
 
-    public function failsEmptyValidation(FunctionalTester $I)
+    public function tryToCreateGroupButFailed(AcceptanceTester $I)
     {
-        $I->wantTo("Test Validation Fails with blank elements");
-        $I->amOnPage(route('groups.create'));
-        $I->seeResponseCodeIs(200);
-        $I->click('Save');
-        $I->seeElement('.alert-danger');
-        $I->see('The name field is required.', '.alert-msg');
+        $test_group_name = 'MyTestGroup' . substr(md5(mt_rand()), 0, 10);
+
+        $I->seeCurrentUrlEquals(route('groups.create'));
+        $I->seeElement('[name="name"]');
+
+        $I->wantToTest('groups create form prevented from submit if nothing is filled');
+        $I->dontSeeElement('.help-block.form-error');
+        $I->clickWithLeftButton('#create-form [type="submit"]');
+        $I->waitForElementVisible('.help-block.form-error');
+        $I->seeElement('.help-block.form-error');
+
+        // Can not create if all required field not filled: Blocked by backend validation
+        $I->wantToTest('groups create form failed to create group when fields do not pass validation');
+        $I->fillField('[name="name"]', $test_group_name);
+        $I->clickWithLeftButton('#create-form [type="submit"]');
+        $I->waitForElementVisible('.alert-msg');
+        $I->seeNumberOfElements('.alert-msg', [1, 3]);
+        $I->seeElement('.alert.alert-danger.fade.in');
     }
 
-    public function failsShortValidation(FunctionalTester $I)
+    public function tryTocreateNewGroup(AcceptanceTester $I, $cookie_name = 'test_group_name')
     {
-        $I->wantTo("Test Validation Fails with short name");
-        $I->amOnPage(route('groups.create'));
-        $I->seeResponseCodeIs(200);
-        $I->fillField('name', 't2');
-        $I->click('Save');
-        $I->seeElement('.alert-danger');
-        $I->see('The name must be at least 3 characters', '.alert-msg');
+        $test_group_name = 'MyTestGroup' . substr(md5(mt_rand()), 0, 10);
+
+        $I->wantToTest('create new group');
+        $I->reloadPage();
+        $I->waitForText('Create Group');
+        $I->dontSeeElement('.help-block.form-error');
+        $I->fillField('[name="name"]', $test_group_name);
+       
+        $I->click('#create-form [type="submit"]');
+
+        $I->waitForElement('table#groupsTable tbody');
+        $I->seeInTitle('Groups');
+        $I->see('Groups');
+        $I->seeCurrentUrlEquals('/groups');
+        $I->seeElement('.alert.alert-success.fade.in');
+        $I->see('Success');
+
+        $I->setCookie($cookie_name, $test_group_name);
+        $I->saveSessionSnapshot('test_group_name');
     }
 
-    public function passesCorrectValidation(FunctionalTester $I)
+    public function tryToEditGroup(AcceptanceTester $I)
     {
-        $I->wantTo("Test Validation Succeeds");
-        $I->amOnPage(route('groups.create'));
-        $I->seeResponseCodeIs(200);
-        $I->fillField('name', 'TestGroup');
-        $I->click('Save');
-        $I->dontSee('&lt;span class=&quot;');
-        $I->seeElement('.alert-success');
+        $test_group_name = $I->grabCookie('test_group_name');
+
+        $I->wantToTest('edit previously created group');
+        $I->fillField('.search .form-control', $test_group_name);
+        $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('try { return $("table#groupsTable").data("bootstrap.table").data[0].name === "'.$test_group_name.'"; } catch(e) { return false; }');
+        $I->executeJS('
+            var bootstrap_table_instance = $("table#groupsTable").data("bootstrap.table");
+
+            $.each(bootstrap_table_instance.data, function (k, v) {
+                if (v.name === "'.$test_group_name.'") {
+                    window.location.href = $(\'tr[data-index="\'+k+\'"] [data-original-title="Update"]\').attr("href");
+                }
+            });
+        ');
+        $I->waitForText('Update Group');
+        $I->seeInTitle('Update Group');
+        $I->see('Update Group');
+
+        $old_test_group_name = $test_group_name;
+        $test_group_name = 'MyTestGroup' . substr(md5(mt_rand()), 0, 10);
+
+        $I->fillField('[name="name"]', $test_group_name);
+        $I->fillField('[name="model_number"]', substr(md5(mt_rand()), 0, 14));
+        $I->click('#create-form [type="submit"]');
+        $I->waitForElement('table#groupsTable tbody');
+
+        $I->wantTo('ensure previous group name does not exists after update');
+        $I->fillField('.search .form-control', $old_test_group_name);
+        $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->see('No matching records found');
+
+        $I->setCookie('test_group_name', $test_group_name);
+        $I->saveSessionSnapshot('test_group_name');
+        $I->wait(1);
     }
 
-    public function allowsDelete(FunctionalTester $I, $scenario)
+    public function tryToDeleteGroup(AcceptanceTester $I)
     {
-        $scenario->incomplete('Fix this test to generate a group for deleting');
+        $test_group_name = $I->grabCookie('test_group_name');
 
-        $I->wantTo('Ensure I can delete a group');
+        $I->wantToTest('delete previously created group');
+        $I->fillField('.search .form-control', $test_group_name);
+        $I->waitForElementNotVisible('.fixed-table-loading');
+        $I->waitForJS('try { return $("table#groupsTable").data("bootstrap.table").data[0].name === "'.$test_group_name.'"; } catch(e) { return false; }');
+        $I->executeJS('
+            var bootstrap_table_instance = $("table#groupsTable").data("bootstrap.table");
 
-        // create a group
-        $I->amOnPage(route('groups.create'));
-        $I->seeResponseCodeIs(200);
-        $I->fillField('name', 'TestGroup');
-        $I->click('Save');
-        $I->dontSee('&lt;span class=&quot;');
-        $I->seeElement('.alert-success');
+            $.each(bootstrap_table_instance.data, function (k, v) {
+                if (v.name === "'.$test_group_name.'") {
+                    $(\'tr[data-index="\'+k+\'"] .delete-asset\').click();
+                }
+            });
+        ');
 
-        // delete it
-        $I->amOnPage(route('groups.delete', Group::doesntHave('users')->first()->id));
-        $I->seeResponseCodeIs(200);
-        $I->seeElement('.alert-success');
-        // $I->seeResponseCodeIs(200);
-    }
-
-    public function allowsEditing(FunctionalTester $I, $scenario)
-    {
-        $scenario->incomplete('Fix this test to generate a group for editing');
-        $I->wantTo('Ensure i can edit a group');
+        $I->waitForElementVisible('#dataConfirmModal');
+        $I->waitForElementVisible('#dataConfirmOK');
+        $I->see('Are you sure you wish to delete ' . $test_group_name . '?', '#dataConfirmModal');
+        $I->click('#dataConfirmOK');
+        $I->waitForElementVisible('.alert.alert-success.fade.in');
+        $I->seeElement('.alert.alert-success.fade.in');
+        $I->see('Success');
+        $I->see('The group was deleted successfully');
     }
 }

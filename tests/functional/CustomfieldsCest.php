@@ -147,7 +147,7 @@ class CustomfieldsCest
         $I->fillField('[name="name"]', $test_fieldset_name);
 
         $I->clickWithLeftButton('#webui .form-horizontal [type="submit"]');
-        $I->waitForElement('table[name="fieldsets"]');
+        $I->waitForElement('table[name="fieldsets"]', 20);
         $I->seeInTitle('Custom Fields');
         $I->see('Fieldset');
         $I->seeInCurrentUrl('/fields/fieldsets');
@@ -162,6 +162,7 @@ class CustomfieldsCest
         $I->saveSessionSnapshot('test_fieldset_name');
         $I->amOnPage('fields');
         $I->waitForElementVisible('table#customFieldsTable tbody');
+        $I->saveSessionSnapshot('test_field_name');
     }
 
     public function tryToAddFieldToCustomfieldset(AcceptanceTester $I)
@@ -193,7 +194,7 @@ class CustomfieldsCest
 
         $I->waitForElement('.alert.fade.in');
         $I->see('Success');
-
+        $I->waitForElement('table[name="fieldsets"] tbody tr');
         $I->seeNumberOfElements('table[name="fieldsets"] tbody tr', 1);
         $I->amOnPage('/fields');
         $I->waitForElement('table#customFieldsTable tbody');

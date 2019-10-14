@@ -7,13 +7,15 @@
 class_name: FunctionalTester
 modules:
     enabled:
-        # add framework module here
-        - \Helper\Functional
+        - WebDriver:
+            url: 'https://snipe-it.dev:1337'
+            window_size: false # disabled in ChromeDriver
+            port: 9515
+            browser: chrome
+        - \Helper\Acceptance
         - Laravel5:
-            environment_file: .env.tests
-            cleanup: true
-        - REST:
-            depends: Laravel5
+            part: ORM
+
 groups:
     func1: tests/functional/func-part-1.txt
     func2: tests/functional/func-part-2.txt
